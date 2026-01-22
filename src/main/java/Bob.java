@@ -138,6 +138,23 @@ public class Bob {
                 continue;
             }
 
+            // DELETE
+            if (input.startsWith("delete ")) {
+                int idx = parseIndex(input, "delete ");
+                if (idx >= 0 && idx < tasks.size()) {
+                    Task removed = tasks.remove(idx);
+
+                    System.out.println(LINE);
+                    System.out.println("Noted. I've removed this task:");
+                    System.out.println("  " + removed);
+                    System.out.println("Now you have " + tasks.size() + " tasks in the list.");
+                    System.out.println(LINE);
+                } else {
+                    printError("OOPS!!! That task number does not exist.");
+                }
+                continue;
+            }
+
             // TODO (handles empty todo)
             if (input.equals("todo")) {
                 printError("WRONG!!! Add a description for your todo.");
