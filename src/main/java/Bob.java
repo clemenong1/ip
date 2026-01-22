@@ -1,10 +1,12 @@
 import java.util.Scanner;
+import java.util.ArrayList;
 
 public class Bob {
     private static final String LINE = "____________________________________________________________";
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
+        ArrayList<String> items = new ArrayList<>();
 
         // Greeting
         System.out.println(LINE);
@@ -14,7 +16,7 @@ public class Bob {
 
         // Read until "bye"
         while (true) {
-            String input = sc.nextLine();
+            String input = sc.nextLine().trim();
 
             if (input.equals("bye") || input.equals("Bye")) {
                 System.out.println(LINE);
@@ -30,7 +32,18 @@ public class Bob {
                 break;
             }
 
+            // List ability
+            if (input.equals("list")) {
+                System.out.println(LINE);
+                for (int i = 0; i < items.size(); i++) {
+                    System.out.println((i + 1) + ". " + items.get(i));
+                }
+                System.out.println(LINE);
+                continue;
+            }
+
             // Echo
+            items.add(input);
             System.out.println(LINE);
             System.out.println("added: " + input);
             System.out.println(LINE);
