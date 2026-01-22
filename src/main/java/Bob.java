@@ -32,7 +32,7 @@ public class Bob {
 
             // Echo
             System.out.println(LINE);
-            System.out.println(" " + input + ".GIVE ME MORE.");
+            System.out.println("added: " + input);
             System.out.println(LINE);
         }
 
