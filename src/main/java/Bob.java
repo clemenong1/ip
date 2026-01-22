@@ -18,9 +18,57 @@ public class Bob {
             return isDone ? "X" : " ";
         }
 
+        // Each subclass will override this
+        String typeIcon() {
+            return "";
+        }
+
         @Override
         public String toString() {
+            // default: no type
             return "[" + statusIcon() + "] " + description;
+        }
+    }
+
+    static class Todo extends Task {
+        Todo(String description) {
+            super(description);
+        }
+
+        @Override
+        public String toString() {
+            return "[T]" + "[" + statusIcon() + "] " + description;
+        }
+    }
+
+    static class Deadline extends Task {
+        String by;
+
+        Deadline(String description, String by) {
+            super(description);
+            this.by = by;
+        }
+
+        @Override
+        public String toString() {
+            return "[D]" + "[" + statusIcon() + "] " + description + " (by: " + by + ")";
+        }
+    }
+
+    static class Event extends Task {
+        String from;
+        String to;
+
+        Event(String description, String from, String to) {
+            super(description);
+            this.from = from;
+            this.to = to;
+        }
+
+        @Override
+        public String toString() {
+            return "[E]" + "[" + statusIcon() + "] " + description
+                    + " (from: " + from + " to: " + to + ")";
         }
     }
 
