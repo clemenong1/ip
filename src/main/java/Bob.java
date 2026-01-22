@@ -85,15 +85,10 @@ public class Bob {
         while (true) {
             String input = sc.nextLine().trim();
 
-            if (input.equals("bye") || input.equals("Bye")) {
+            // Exit
+            if (input.equalsIgnoreCase("bye")) {
                 System.out.println(LINE);
                 System.out.println("Bye. Hope to see you again soon!");
-                System.out.println(LINE);
-                break;
-            }
-            if (input.equals("BYE")) {
-                System.out.println(LINE);
-                System.out.println("BYE. HOPE TO SEE YOU AGAIN SOON!");
                 System.out.println(LINE);
                 break;
             }
@@ -103,7 +98,7 @@ public class Bob {
                 System.out.println(LINE);
                 System.out.println("Here are the tasks in your list:");
                 for (int i = 0; i < tasks.size(); i++) {
-                    System.out.println((i + 1) + "." + tasks.get(i)); // e.g. 1.[ ] read book
+                    System.out.println((i + 1) + "." + tasks.get(i));
                 }
                 System.out.println(LINE);
                 continue;
@@ -111,7 +106,7 @@ public class Bob {
 
             // MARK
             if (input.startsWith("mark ")) {
-                int idx = parseIndex(input, "mark "); // 0-based
+                int idx = parseIndex(input, "mark ");
                 if (idx >= 0 && idx < tasks.size()) {
                     Task t = tasks.get(idx);
                     t.isDone = true;
@@ -120,13 +115,15 @@ public class Bob {
                     System.out.println("Nice! I've marked this task as done:");
                     System.out.println("  " + t);
                     System.out.println(LINE);
+                } else {
+                    printError("WRONG!!! That task number does not exist.");
                 }
                 continue;
             }
 
             // UNMARK
             if (input.startsWith("unmark ")) {
-                int idx = parseIndex(input, "unmark "); // 0-based
+                int idx = parseIndex(input, "unmark ");
                 if (idx >= 0 && idx < tasks.size()) {
                     Task t = tasks.get(idx);
                     t.isDone = false;
@@ -135,29 +132,67 @@ public class Bob {
                     System.out.println("OK, I've marked this task as not done yet:");
                     System.out.println("  " + t);
                     System.out.println(LINE);
+                } else {
+                    printError("WRONG!!! That task number does not exist.");
                 }
+                continue;
+            }
+
+            // TODO (handles empty todo)
+            if (input.equals("todo")) {
+                printError("WRONG!!! Add a description for your todo.");
                 continue;
             }
 
             if (input.startsWith("todo ")) {
                 String desc = input.substring("todo ".length()).trim();
+                if (desc.isEmpty()) {
+                    printError("WRONG!!! Add a description for your todo.");
+                    continue;
+                }
+
                 Task t = new Todo(desc);
                 tasks.add(t);
                 printAdded(t, tasks.size());
                 continue;
             }
 
+            // DEADLINE (handles missing /by)
+            if (input.equals("deadline")) {
+                printError("WRONG!!! Add a description for your deadline task.");
+                continue;
+            }
+
             if (input.startsWith("deadline ")) {
                 String rest = input.substring("deadline ".length()).trim();
-
                 int byPos = rest.indexOf("/by");
-                if (byPos != -1) {
-                    String desc = rest.substring(0, byPos).trim();
-                    String by = rest.substring(byPos + 3).trim(); // 3 = length of "/by"
-                    Task t = new Deadline(desc, by);
-                    tasks.add(t);
-                    printAdded(t, tasks.size());
+
+                if (byPos == -1) {
+                    printError("WRONG!!! A deadline must have '/by <time>'");
+                    continue;
                 }
+
+                String desc = rest.substring(0, byPos).trim();
+                String by = rest.substring(byPos + 3).trim();
+
+                if (desc.isEmpty()) {
+                    printError("WRONG!!! Add a description for your deadline task.");
+                    continue;
+                }
+                if (by.isEmpty()) {
+                    printError("WRONG!!! The deadline time cannot be empty.");
+                    continue;
+                }
+
+                Task t = new Deadline(desc, by);
+                tasks.add(t);
+                printAdded(t, tasks.size());
+                continue;
+            }
+
+            // EVENT (handles missing /from or /to)
+            if (input.equals("event")) {
+                printError("WRONG!!! Add a description for your event.");
                 continue;
             }
 
@@ -167,27 +202,43 @@ public class Bob {
                 int fromPos = rest.indexOf("/from");
                 int toPos = rest.indexOf("/to");
 
-                if (fromPos != -1 && toPos != -1 && toPos > fromPos) {
-                    String desc = rest.substring(0, fromPos).trim();
-                    String from = rest.substring(fromPos + 5, toPos).trim(); // 5 = "/from"
-                    String to = rest.substring(toPos + 3).trim();            // 3 = "/to"
-
-                    Task t = new Event(desc, from, to);
-                    tasks.add(t);
-                    printAdded(t, tasks.size());
+                if (fromPos == -1 || toPos == -1 || toPos < fromPos) {
+                    printError("WRONG!!! An event must have '/from <start> /to <end>'");
+                    continue;
                 }
+
+                String desc = rest.substring(0, fromPos).trim();
+                String from = rest.substring(fromPos + 5, toPos).trim();
+                String to = rest.substring(toPos + 3).trim();
+
+                if (desc.isEmpty()) {
+                    printError("WRONG!!! Add a description for your event.");
+                    continue;
+                }
+                if (from.isEmpty() || to.isEmpty()) {
+                    printError("WRONG!!! The event start/end time cannot be empty.");
+                    continue;
+                }
+
+                Task t = new Event(desc, from, to);
+                tasks.add(t);
+                printAdded(t, tasks.size());
                 continue;
             }
 
-            // if it is not a command
-            System.out.println(LINE);
-            System.out.println(input);
-            System.out.println(LINE);
+            // Unknown command
+            printError("WRONG!!! I'm sorry, but I don't know what that means :-(");
         }
         sc.close();
     }
 
     // Helpers
+    private static void printError(String message) {
+        System.out.println(LINE);
+        System.out.println(message);
+        System.out.println(LINE);
+    }
+
     private static void printAdded(Task t, int total) {
         System.out.println(LINE);
         System.out.println("Got it. I've added this task:");
