@@ -139,6 +139,11 @@ public class Bob {
             }
 
             // DELETE
+            if (input.equals("delete")) {
+                printError("WRONG!!! Please specify a task number to delete.");
+                continue;
+            }
+
             if (input.startsWith("delete ")) {
                 int idx = parseIndex(input, "delete ");
                 if (idx >= 0 && idx < tasks.size()) {
@@ -150,7 +155,7 @@ public class Bob {
                     System.out.println("Now you have " + tasks.size() + " tasks in the list.");
                     System.out.println(LINE);
                 } else {
-                    printError("OOPS!!! That task number does not exist.");
+                    printError("WRONG!!! That task number does not exist.");
                 }
                 continue;
             }
