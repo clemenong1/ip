@@ -139,17 +139,63 @@ public class Bob {
                 continue;
             }
 
-            Task newTask = new Task(input);
-            tasks.add(newTask);
+            if (input.startsWith("todo ")) {
+                String desc = input.substring("todo ".length()).trim();
+                Task t = new Todo(desc);
+                tasks.add(t);
+                printAdded(t, tasks.size());
+                continue;
+            }
 
+            if (input.startsWith("deadline ")) {
+                String rest = input.substring("deadline ".length()).trim();
+
+                int byPos = rest.indexOf("/by");
+                if (byPos != -1) {
+                    String desc = rest.substring(0, byPos).trim();
+                    String by = rest.substring(byPos + 3).trim(); // 3 = length of "/by"
+                    Task t = new Deadline(desc, by);
+                    tasks.add(t);
+                    printAdded(t, tasks.size());
+                }
+                continue;
+            }
+
+            if (input.startsWith("event ")) {
+                String rest = input.substring("event ".length()).trim();
+
+                int fromPos = rest.indexOf("/from");
+                int toPos = rest.indexOf("/to");
+
+                if (fromPos != -1 && toPos != -1 && toPos > fromPos) {
+                    String desc = rest.substring(0, fromPos).trim();
+                    String from = rest.substring(fromPos + 5, toPos).trim(); // 5 = "/from"
+                    String to = rest.substring(toPos + 3).trim();            // 3 = "/to"
+
+                    Task t = new Event(desc, from, to);
+                    tasks.add(t);
+                    printAdded(t, tasks.size());
+                }
+                continue;
+            }
+
+            // if it is not a command
             System.out.println(LINE);
-            System.out.println("added: " + input);
+            System.out.println(input);
             System.out.println(LINE);
         }
         sc.close();
     }
 
-    // Helper
+    // Helpers
+    private static void printAdded(Task t, int total) {
+        System.out.println(LINE);
+        System.out.println("Got it. I've added this task:");
+        System.out.println("  " + t);
+        System.out.println("Now you have " + total + " tasks in the list.");
+        System.out.println(LINE);
+    }
+
     private static int parseIndex(String input, String prefix) {
         try {
             String numberPart = input.substring(prefix.length()).trim();
