@@ -4,18 +4,28 @@ import java.util.ArrayList;
 public class Bob {
     private static final String LINE = "____________________________________________________________";
 
+    enum Status {
+        DONE("X"),
+        NOT_DONE(" ");
+
+        final String icon;
+        Status(String icon) {
+            this.icon = icon;
+        }
+    }
+
     // Task class to store description + done status
     static class Task {
         String description;
-        boolean isDone;
+        Status status;
 
         Task(String description) {
             this.description = description;
-            this.isDone = false;
+            this.status = Status.NOT_DONE;
         }
 
         String statusIcon() {
-            return isDone ? "X" : " ";
+            return status.icon;
         }
 
         // Each subclass will override this
@@ -109,7 +119,7 @@ public class Bob {
                 int idx = parseIndex(input, "mark ");
                 if (idx >= 0 && idx < tasks.size()) {
                     Task t = tasks.get(idx);
-                    t.isDone = true;
+                    t.status = Status.DONE;
 
                     System.out.println(LINE);
                     System.out.println("Nice! I've marked this task as done:");
@@ -126,7 +136,7 @@ public class Bob {
                 int idx = parseIndex(input, "unmark ");
                 if (idx >= 0 && idx < tasks.size()) {
                     Task t = tasks.get(idx);
-                    t.isDone = false;
+                    t.status = Status.NOT_DONE;
 
                     System.out.println(LINE);
                     System.out.println("OK, I've marked this task as not done yet:");
