@@ -1,34 +1,72 @@
-import java.util.Scanner;
-import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import java.util.ArrayList;
+import java.util.Scanner;
+
+/**
+ * Runs the Bob chatbot application that manages a list of tasks.
+ */
 public class Bob {
     private static final String LINE = "____________________________________________________________";
+    private static final Path DATA_DIRECTORY = Paths.get("data");
+    private static final Path DATA_FILE_PATH = DATA_DIRECTORY.resolve("duke.txt");
 
+    /**
+     * Represents the completion status of a task.
+     */
     enum Status {
         DONE("X"),
         NOT_DONE(" ");
 
         final String icon;
+
+        /**
+         * Creates a status with the icon used in the UI.
+         *
+         * @param icon Icon representing the status.
+         */
         Status(String icon) {
             this.icon = icon;
         }
     }
 
-    // Task class to store description + done status
+    /**
+     * Represents a task with a description and completion status.
+     */
     static class Task {
         String description;
         Status status;
 
+        /**
+         * Creates a task with the given description and an initial NOT_DONE status.
+         *
+         * @param description Task description.
+         */
         Task(String description) {
             this.description = description;
             this.status = Status.NOT_DONE;
         }
 
+        /**
+         * Returns the status icon for this task.
+         *
+         * @return Status icon.
+         */
         String statusIcon() {
             return status.icon;
         }
 
-        // Each subclass will override this
+        /**
+         * Returns the type icon for this task.
+         *
+         * @return Type icon (empty by default).
+         */
         String typeIcon() {
             return "";
         }
@@ -40,6 +78,9 @@ public class Bob {
         }
     }
 
+    /**
+     * Represents a Todo task.
+     */
     static class Todo extends Task {
         Todo(String description) {
             super(description);
@@ -51,6 +92,9 @@ public class Bob {
         }
     }
 
+    /**
+     * Represents a Deadline task with a deadline time.
+     */
     static class Deadline extends Task {
         String by;
 
@@ -65,6 +109,9 @@ public class Bob {
         }
     }
 
+    /**
+     * Represents an Event task with a start and end time.
+     */
     static class Event extends Task {
         String from;
         String to;
@@ -82,9 +129,123 @@ public class Bob {
         }
     }
 
+    /**
+     * Loads tasks from disk into an in-memory list.
+     *
+     * @return List of tasks loaded from disk. Returns an empty list if the file does not exist.
+     */
+    private static ArrayList<Task> loadTasksFromDisk() {
+        ArrayList<Task> tasks = new ArrayList<>();
+
+        if (!Files.exists(DATA_FILE_PATH)) {
+            return tasks;
+        }
+
+        try (BufferedReader reader = Files.newBufferedReader(DATA_FILE_PATH)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                Task task = parseTaskLine(line);
+                if (task != null) {
+                    tasks.add(task);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Could not load tasks: " + e.getMessage());
+        }
+
+        return tasks;
+    }
+
+    /**
+     * Saves the given list of tasks to disk.
+     *
+     * @param tasks List of tasks to save.
+     */
+    private static void saveTasksToDisk(ArrayList<Task> tasks) {
+        try {
+            Files.createDirectories(DATA_DIRECTORY);
+
+            try (BufferedWriter writer = Files.newBufferedWriter(DATA_FILE_PATH)) {
+                for (Task task : tasks) {
+                    writer.write(formatTaskLine(task));
+                    writer.newLine();
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Could not save tasks: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Returns the storage format line for a given task.
+     *
+     * @param task Task to format.
+     * @return Storage line representing the task.
+     */
+    private static String formatTaskLine(Task task) {
+        String isDone = (task.status == Status.DONE) ? "1" : "0";
+
+        if (task instanceof Todo) {
+            return "T | " + isDone + " | " + task.description;
+        }
+
+        if (task instanceof Deadline) {
+            Deadline deadline = (Deadline) task;
+            return "D | " + isDone + " | " + deadline.description + " | " + deadline.by;
+        }
+
+        if (task instanceof Event) {
+            Event event = (Event) task;
+            return "E | " + isDone + " | " + event.description + " | " + event.from + " | " + event.to;
+        }
+
+        return "";
+    }
+
+    /**
+     * Parses a storage format line into a Task instance.
+     *
+     * @param line Storage line.
+     * @return Parsed task, or null if the line is invalid/corrupted.
+     */
+    private static Task parseTaskLine(String line) {
+        try {
+            String[] parts = line.split("\\s*\\|\\s*");
+            if (parts.length < 3) {
+                return null;
+            }
+
+            String type = parts[0];
+            String isDone = parts[1];
+            String description = parts[2];
+
+            Task task;
+            if ("T".equals(type)) {
+                task = new Todo(description);
+            } else if ("D".equals(type)) {
+                if (parts.length < 4) {
+                    return null;
+                }
+                task = new Deadline(description, parts[3]);
+            } else if ("E".equals(type)) {
+                if (parts.length < 5) {
+                    return null;
+                }
+                task = new Event(description, parts[3], parts[4]);
+            } else {
+                return null;
+            }
+
+            task.status = "1".equals(isDone) ? Status.DONE : Status.NOT_DONE;
+            return task;
+        } catch (Exception e) {
+            return null; // corrupted line -> skip
+        }
+    }
+
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        ArrayList<Task> tasks = new ArrayList<>();
+        ArrayList<Task> tasks = loadTasksFromDisk();
 
         // Greeting
         System.out.println(LINE);
@@ -120,6 +281,7 @@ public class Bob {
                 if (idx >= 0 && idx < tasks.size()) {
                     Task t = tasks.get(idx);
                     t.status = Status.DONE;
+                    saveTasksToDisk(tasks);
 
                     System.out.println(LINE);
                     System.out.println("Nice! I've marked this task as done:");
@@ -137,6 +299,7 @@ public class Bob {
                 if (idx >= 0 && idx < tasks.size()) {
                     Task t = tasks.get(idx);
                     t.status = Status.NOT_DONE;
+                    saveTasksToDisk(tasks);
 
                     System.out.println(LINE);
                     System.out.println("OK, I've marked this task as not done yet:");
@@ -158,6 +321,7 @@ public class Bob {
                 int idx = parseIndex(input, "delete ");
                 if (idx >= 0 && idx < tasks.size()) {
                     Task removed = tasks.remove(idx);
+                    saveTasksToDisk(tasks);
 
                     System.out.println(LINE);
                     System.out.println("Noted. I've removed this task:");
@@ -185,6 +349,7 @@ public class Bob {
 
                 Task t = new Todo(desc);
                 tasks.add(t);
+                saveTasksToDisk(tasks);
                 printAdded(t, tasks.size());
                 continue;
             }
@@ -218,6 +383,7 @@ public class Bob {
 
                 Task t = new Deadline(desc, by);
                 tasks.add(t);
+                saveTasksToDisk(tasks);
                 printAdded(t, tasks.size());
                 continue;
             }
@@ -254,6 +420,7 @@ public class Bob {
 
                 Task t = new Event(desc, from, to);
                 tasks.add(t);
+                saveTasksToDisk(tasks);
                 printAdded(t, tasks.size());
                 continue;
             }
@@ -264,13 +431,24 @@ public class Bob {
         sc.close();
     }
 
-    // Helpers
+
+    /**
+     * Prints an error message wrapped with divider lines, following format.
+     *
+     * @param message Error message to print.
+     */
     private static void printError(String message) {
         System.out.println(LINE);
         System.out.println(message);
         System.out.println(LINE);
     }
 
+    /**
+     * Prints the confirmation message after a task is added.
+     *
+     * @param t Task that was added.
+     * @param total Total number of tasks after adding.
+     */
     private static void printAdded(Task t, int total) {
         System.out.println(LINE);
         System.out.println("Got it. I've added this task:");
@@ -279,6 +457,13 @@ public class Bob {
         System.out.println(LINE);
     }
 
+    /**
+     * Returns the 0-based index parsed from a command string that contains a 1-based task number.
+     *
+     * @param input Full user input.
+     * @param prefix Command prefix (e.g., "mark ", "delete ").
+     * @return 0-based index if parsing succeeds, otherwise -1.
+     */
     private static int parseIndex(String input, String prefix) {
         try {
             String numberPart = input.substring(prefix.length()).trim();
