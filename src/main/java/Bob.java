@@ -9,6 +9,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Locale;
+
 /**
  * Runs the Bob chatbot application that manages a list of tasks.
  */
@@ -16,6 +23,74 @@ public class Bob {
     private static final String LINE = "____________________________________________________________";
     private static final Path DATA_DIRECTORY = Paths.get("data");
     private static final Path DATA_FILE_PATH = DATA_DIRECTORY.resolve("duke.txt");
+
+    private static final DateTimeFormatter OUTPUT_DATE =
+            DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
+
+    private static final DateTimeFormatter OUTPUT_DATE_TIME =
+            DateTimeFormatter.ofPattern("MMM dd yyyy HH:mm", Locale.ENGLISH);
+
+    /**
+     * Storage format kept consistent on disk.
+     * Example: 2019-12-02 1800
+     */
+    private static final DateTimeFormatter STORAGE_DATE_TIME =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm");
+
+    /**
+     * Parses user input into a LocalDateTime, accepting multiple formats.
+     * Supported examples:
+     * - 2019-10-15
+     * - 2019-10-15 1800
+     * - 2/12/2019
+     * - 2/12/2019 1800
+     * - 2/12/2019 18:00
+     * - 2019-10-15 18:00
+     */
+    private static LocalDateTime parseUserDateTime(String raw) {
+        String s = raw.trim();
+
+        DateTimeFormatter[] dateTimeFormats = new DateTimeFormatter[] {
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
+                DateTimeFormatter.ofPattern("d/M/yyyy HHmm"),
+                DateTimeFormatter.ofPattern("d/M/yyyy HH:mm")
+        };
+
+        for (DateTimeFormatter f : dateTimeFormats) {
+            try {
+                return LocalDateTime.parse(s, f);
+            } catch (DateTimeParseException ignored) {
+                // try next
+            }
+        }
+
+        DateTimeFormatter[] dateOnlyFormats = new DateTimeFormatter[] {
+                DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+                DateTimeFormatter.ofPattern("d/M/yyyy")
+        };
+
+        for (DateTimeFormatter f : dateOnlyFormats) {
+            try {
+                LocalDate d = LocalDate.parse(s, f);
+                return d.atStartOfDay(); // date-only -> 00:00
+            } catch (DateTimeParseException ignored) {
+                // try next
+            }
+        }
+
+        throw new DateTimeParseException("Unparseable date/time", s, 0);
+    }
+
+    /**
+     * Prints date-only if time is 00:00, else prints date+time.
+     */
+    private static String formatForUi(LocalDateTime dt) {
+        if (dt.toLocalTime().equals(LocalTime.MIDNIGHT)) {
+            return dt.format(OUTPUT_DATE);
+        }
+        return dt.format(OUTPUT_DATE_TIME);
+    }
 
     /**
      * Represents the completion status of a task.
@@ -96,16 +171,16 @@ public class Bob {
      * Represents a Deadline task with a deadline time.
      */
     static class Deadline extends Task {
-        String by;
+        LocalDateTime by;
 
-        Deadline(String description, String by) {
+        Deadline(String description, LocalDateTime by) {
             super(description);
             this.by = by;
         }
 
         @Override
         public String toString() {
-            return "[D]" + "[" + statusIcon() + "] " + description + " (by: " + by + ")";
+            return "[D]" + "[" + statusIcon() + "] " + description + " (by: " + formatForUi(by) + ")";
         }
     }
 
@@ -113,10 +188,10 @@ public class Bob {
      * Represents an Event task with a start and end time.
      */
     static class Event extends Task {
-        String from;
-        String to;
+        LocalDateTime from;
+        LocalDateTime to;
 
-        Event(String description, String from, String to) {
+        Event(String description, LocalDateTime from, LocalDateTime to) {
             super(description);
             this.from = from;
             this.to = to;
@@ -125,7 +200,7 @@ public class Bob {
         @Override
         public String toString() {
             return "[E]" + "[" + statusIcon() + "] " + description
-                    + " (from: " + from + " to: " + to + ")";
+                    + " (from: " + formatForUi(from) + " to: " + formatForUi(to) + ")";
         }
     }
 
@@ -191,14 +266,15 @@ public class Bob {
 
         if (task instanceof Deadline) {
             Deadline deadline = (Deadline) task;
-            return "D | " + isDone + " | " + deadline.description + " | " + deadline.by;
+            return "D | " + isDone + " | " + deadline.description + " | " + deadline.by.format(STORAGE_DATE_TIME);
         }
 
         if (task instanceof Event) {
             Event event = (Event) task;
-            return "E | " + isDone + " | " + event.description + " | " + event.from + " | " + event.to;
+            return "E | " + isDone + " | " + event.description
+                    + " | " + event.from.format(STORAGE_DATE_TIME)
+                    + " | " + event.to.format(STORAGE_DATE_TIME);
         }
-
         return "";
     }
 
@@ -226,12 +302,15 @@ public class Bob {
                 if (parts.length < 4) {
                     return null;
                 }
-                task = new Deadline(description, parts[3]);
+                LocalDateTime by = LocalDateTime.parse(parts[3], STORAGE_DATE_TIME);
+                task = new Deadline(description, by);
             } else if ("E".equals(type)) {
                 if (parts.length < 5) {
                     return null;
                 }
-                task = new Event(description, parts[3], parts[4]);
+                LocalDateTime from = LocalDateTime.parse(parts[3], STORAGE_DATE_TIME);
+                LocalDateTime to = LocalDateTime.parse(parts[4], STORAGE_DATE_TIME);
+                task = new Event(description, from, to);
             } else {
                 return null;
             }
@@ -370,21 +449,30 @@ public class Bob {
                 }
 
                 String desc = rest.substring(0, byPos).trim();
-                String by = rest.substring(byPos + 3).trim();
+                String byRaw = rest.substring(byPos + 3).trim();
 
                 if (desc.isEmpty()) {
                     printError("WRONG!!! Add a description for your deadline task.");
                     continue;
                 }
-                if (by.isEmpty()) {
+                if (byRaw.isEmpty()) {
                     printError("WRONG!!! The deadline time cannot be empty.");
                     continue;
                 }
 
-                Task t = new Deadline(desc, by);
-                tasks.add(t);
-                saveTasksToDisk(tasks);
-                printAdded(t, tasks.size());
+                try {
+                    LocalDateTime by = parseUserDateTime(byRaw);
+                    Task t = new Deadline(desc, by);
+                    tasks.add(t);
+                    saveTasksToDisk(tasks);
+                    printAdded(t, tasks.size());
+                } catch (DateTimeParseException e) {
+                    printError("WRONG!!! Invalid date/time.\n"
+                            + "Use formats like:\n"
+                            + "  2019-10-15\n"
+                            + "  2019-10-15 1800\n"
+                            + "  2/12/2019 1800");
+                }
                 continue;
             }
 
@@ -406,25 +494,84 @@ public class Bob {
                 }
 
                 String desc = rest.substring(0, fromPos).trim();
-                String from = rest.substring(fromPos + 5, toPos).trim();
-                String to = rest.substring(toPos + 3).trim();
+                String fromRaw = rest.substring(fromPos + 5, toPos).trim();
+                String toRaw = rest.substring(toPos + 3).trim();
 
                 if (desc.isEmpty()) {
                     printError("WRONG!!! Add a description for your event.");
                     continue;
                 }
-                if (from.isEmpty() || to.isEmpty()) {
+                if (fromRaw.isEmpty() || toRaw.isEmpty()) {
                     printError("WRONG!!! The event start/end time cannot be empty.");
                     continue;
                 }
 
-                Task t = new Event(desc, from, to);
-                tasks.add(t);
-                saveTasksToDisk(tasks);
-                printAdded(t, tasks.size());
+                try {
+                    LocalDateTime from = parseUserDateTime(fromRaw);
+                    LocalDateTime to = parseUserDateTime(toRaw);
+
+                    if (to.isBefore(from)) {
+                        printError("WRONG!!! Event end time must be after start time.");
+                        continue;
+                    }
+
+                    Task t = new Event(desc, from, to);
+                    tasks.add(t);
+                    saveTasksToDisk(tasks);
+                    printAdded(t, tasks.size());
+                } catch (DateTimeParseException e) {
+                    printError("WRONG!!! Invalid date/time.\n"
+                            + "Use formats like:\n"
+                            + "  2019-10-15\n"
+                            + "  2019-10-15 1800\n"
+                            + "  2/12/2019 1800");
+                }
                 continue;
             }
 
+            // ON (lists deadlines/events on a specific date)
+            if (input.startsWith("on ")) {
+                String dateRaw = input.substring("on ".length()).trim();
+                try {
+                    LocalDate date = LocalDate.parse(dateRaw, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+                    System.out.println(LINE);
+                    System.out.println("Here are the tasks occurring on " + date.format(OUTPUT_DATE) + ":");
+
+                    LocalDateTime start = date.atStartOfDay();
+                    LocalDateTime end = date.plusDays(1).atStartOfDay().minusNanos(1);
+
+                    int count = 0;
+                    for (int i = 0; i < tasks.size(); i++) {
+                        Task t = tasks.get(i);
+
+                        boolean matches = false;
+
+                        if (t instanceof Deadline) {
+                            Deadline d = (Deadline) t;
+                            matches = d.by.toLocalDate().equals(date);
+                        } else if (t instanceof Event) {
+                            Event e = (Event) t;
+                            // overlaps the day
+                            matches = !e.to.isBefore(start) && !e.from.isAfter(end);
+                        }
+
+                        if (matches) {
+                            System.out.println((i + 1) + "." + t);
+                            count++;
+                        }
+                    }
+
+                    if (count == 0) {
+                        System.out.println("No matching tasks.");
+                    }
+
+                    System.out.println(LINE);
+                } catch (DateTimeParseException e) {
+                    printError("WRONG!!! Invalid date.\nUse: on yyyy-mm-dd (e.g., on 2019-12-02)");
+                }
+                continue;
+            }
             // Unknown command
             printError("WRONG!!! I'm sorry, but I don't know what that means :-(");
         }
