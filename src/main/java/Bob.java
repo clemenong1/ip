@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 /**
@@ -45,7 +44,7 @@ public class Bob {
 
             // MARK
             if (input.startsWith("mark ")) {
-                int idx = parseIndex(input, "mark ");
+                int idx = Parser.parseIndex(input, "mark ");
                 if (tasks.isValidIndex(idx)) {
                     Task t = tasks.get(idx);
                     t.status = Task.Status.DONE;
@@ -63,7 +62,7 @@ public class Bob {
 
             // UNMARK
             if (input.startsWith("unmark ")) {
-                int idx = parseIndex(input, "unmark ");
+                int idx = Parser.parseIndex(input, "unmark ");
                 if (tasks.isValidIndex(idx)) {
                     Task t = tasks.get(idx);
                     t.status = Task.Status.NOT_DONE;
@@ -86,7 +85,7 @@ public class Bob {
             }
 
             if (input.startsWith("delete ")) {
-                int idx = parseIndex(input, "delete ");
+                int idx = Parser.parseIndex(input, "delete ");
                 if (tasks.isValidIndex(idx)) {
                     Task removed = tasks.remove(idx);
                     try {
@@ -108,7 +107,7 @@ public class Bob {
             }
 
             if (input.startsWith("todo ")) {
-                String desc = input.substring("todo ".length()).trim();
+                String desc = Parser.parseTodoDescription(input);
                 if (desc.isEmpty()) {
                     ui.showError("WRONG!!! Add a description for your todo.");
                     continue;
@@ -132,25 +131,16 @@ public class Bob {
             }
 
             if (input.startsWith("deadline ")) {
-                String rest = input.substring("deadline ".length()).trim();
-                int byPos = rest.indexOf("/by");
-
-                if (byPos == -1) {
-                    ui.showError("WRONG!!! A deadline must have '/by <time>'");
+                String[] deadlineArgs;
+                try {
+                    deadlineArgs = Parser.parseDeadlineArgs(input);
+                } catch (IllegalArgumentException e) {
+                    ui.showError("WRONG!!! " + e.getMessage());
                     continue;
                 }
 
-                String desc = rest.substring(0, byPos).trim();
-                String byRaw = rest.substring(byPos + 3).trim();
-
-                if (desc.isEmpty()) {
-                    ui.showError("WRONG!!! Add a description for your deadline task.");
-                    continue;
-                }
-                if (byRaw.isEmpty()) {
-                    ui.showError("WRONG!!! The deadline time cannot be empty.");
-                    continue;
-                }
+                String desc = deadlineArgs[0];
+                String byRaw = deadlineArgs[1];
 
                 try {
                     LocalDateTime by = DateTimeUtil.parseUserDateTime(byRaw);
@@ -179,28 +169,17 @@ public class Bob {
             }
 
             if (input.startsWith("event ")) {
-                String rest = input.substring("event ".length()).trim();
-
-                int fromPos = rest.indexOf("/from");
-                int toPos = rest.indexOf("/to");
-
-                if (fromPos == -1 || toPos == -1 || toPos < fromPos) {
-                    ui.showError("WRONG!!! An event must have '/from <start> /to <end>'");
+                String[] eventArgs;
+                try {
+                    eventArgs = Parser.parseEventArgs(input);
+                } catch (IllegalArgumentException e) {
+                    ui.showError("WRONG!!! " + e.getMessage());
                     continue;
                 }
 
-                String desc = rest.substring(0, fromPos).trim();
-                String fromRaw = rest.substring(fromPos + 5, toPos).trim();
-                String toRaw = rest.substring(toPos + 3).trim();
-
-                if (desc.isEmpty()) {
-                    ui.showError("WRONG!!! Add a description for your event.");
-                    continue;
-                }
-                if (fromRaw.isEmpty() || toRaw.isEmpty()) {
-                    ui.showError("WRONG!!! The event start/end time cannot be empty.");
-                    continue;
-                }
+                String desc = eventArgs[0];
+                String fromRaw = eventArgs[1];
+                String toRaw = eventArgs[2];
 
                 try {
                     LocalDateTime from = DateTimeUtil.parseUserDateTime(fromRaw);
@@ -231,9 +210,9 @@ public class Bob {
 
             // ON (lists deadlines/events on a specific date)
             if (input.startsWith("on ")) {
-                String dateRaw = input.substring("on ".length()).trim();
+                LocalDate date;
                 try {
-                    LocalDate date = LocalDate.parse(dateRaw, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                    date = Parser.parseOnDate(input);
 
                     LocalDateTime start = date.atStartOfDay();
                     LocalDateTime end = date.plusDays(1).atStartOfDay().minusNanos(1);
@@ -268,22 +247,5 @@ public class Bob {
             ui.showError("WRONG!!! I'm sorry, but I don't know what that means :-(");
         }
         ui.close();
-    }
-
-    /**
-     * Parses a 0-based index from a command string that contains a 1-based task number.
-     *
-     * @param input Full user input.
-     * @param prefix Command prefix (e.g., "mark ", "delete ").
-     * @return 0-based index if parsing succeeds, otherwise -1.
-     */
-    private static int parseIndex(String input, String prefix) {
-        try {
-            String numberPart = input.substring(prefix.length()).trim();
-            int oneBased = Integer.parseInt(numberPart);
-            return oneBased - 1;
-        } catch (Exception e) {
-            return -1;
-        }
     }
 }
