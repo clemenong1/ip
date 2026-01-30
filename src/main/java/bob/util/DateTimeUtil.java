@@ -7,6 +7,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 
+/**
+ * Utility for parsing and formatting dates and times (user input, display, storage).
+ */
 public class DateTimeUtil {
     private static final DateTimeFormatter OUTPUT_DATE =
             DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
