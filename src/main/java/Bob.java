@@ -10,20 +10,30 @@ import java.time.format.DateTimeParseException;
  * Runs the Bob chatbot application that manages a list of tasks.
  */
 public class Bob {
-    private static final String DATA_FILE_PATH = "data/duke.txt";
+    private Storage storage;
+    private TaskList tasks;
+    private Ui ui;
 
-    public static void main(String[] args) {
-        Ui ui = new Ui();
-        Storage storage = new Storage(DATA_FILE_PATH);
-        TaskList tasks;
-
+    /**
+     * Creates a new Bob instance with the given file path.
+     *
+     * @param filePath Path to the file for storing tasks.
+     */
+    public Bob(String filePath) {
+        ui = new Ui();
+        storage = new Storage(filePath);
         try {
             tasks = new TaskList(storage.load());
         } catch (IOException e) {
             ui.showError("Could not load tasks: " + e.getMessage());
             tasks = new TaskList();
         }
+    }
 
+    /**
+     * Runs the Bob chatbot application.
+     */
+    public void run() {
         // Greeting
         ui.showWelcome();
 
@@ -247,5 +257,14 @@ public class Bob {
             ui.showError("WRONG!!! I'm sorry, but I don't know what that means :-(");
         }
         ui.close();
+    }
+
+    /**
+     * Entry point for the Bob chatbot application.
+     *
+     * @param args Command line arguments (not used).
+     */
+    public static void main(String[] args) {
+        new Bob("data/bob.txt").run();
     }
 }
