@@ -11,10 +11,8 @@ import java.util.Scanner;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Locale;
 
 /**
  * Runs the Bob chatbot application that manages a list of tasks.
@@ -23,186 +21,6 @@ public class Bob {
     private static final String LINE = "____________________________________________________________";
     private static final Path DATA_DIRECTORY = Paths.get("data");
     private static final Path DATA_FILE_PATH = DATA_DIRECTORY.resolve("duke.txt");
-
-    private static final DateTimeFormatter OUTPUT_DATE =
-            DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
-
-    private static final DateTimeFormatter OUTPUT_DATE_TIME =
-            DateTimeFormatter.ofPattern("MMM dd yyyy HH:mm", Locale.ENGLISH);
-
-    /**
-     * Storage format kept consistent on disk.
-     * Example: 2019-12-02 1800
-     */
-    private static final DateTimeFormatter STORAGE_DATE_TIME =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm");
-
-    /**
-     * Parses user input into a LocalDateTime, accepting multiple formats.
-     * Supported examples:
-     * - 2019-10-15
-     * - 2019-10-15 1800
-     * - 2/12/2019
-     * - 2/12/2019 1800
-     * - 2/12/2019 18:00
-     * - 2019-10-15 18:00
-     */
-    private static LocalDateTime parseUserDateTime(String raw) {
-        String s = raw.trim();
-
-        DateTimeFormatter[] dateTimeFormats = new DateTimeFormatter[] {
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm"),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
-                DateTimeFormatter.ofPattern("d/M/yyyy HHmm"),
-                DateTimeFormatter.ofPattern("d/M/yyyy HH:mm")
-        };
-
-        for (DateTimeFormatter f : dateTimeFormats) {
-            try {
-                return LocalDateTime.parse(s, f);
-            } catch (DateTimeParseException ignored) {
-                // try next
-            }
-        }
-
-        DateTimeFormatter[] dateOnlyFormats = new DateTimeFormatter[] {
-                DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-                DateTimeFormatter.ofPattern("d/M/yyyy")
-        };
-
-        for (DateTimeFormatter f : dateOnlyFormats) {
-            try {
-                LocalDate d = LocalDate.parse(s, f);
-                return d.atStartOfDay(); // date-only -> 00:00
-            } catch (DateTimeParseException ignored) {
-                // try next
-            }
-        }
-
-        throw new DateTimeParseException("Unparseable date/time", s, 0);
-    }
-
-    /**
-     * Prints date-only if time is 00:00, else prints date+time.
-     */
-    private static String formatForUi(LocalDateTime dt) {
-        if (dt.toLocalTime().equals(LocalTime.MIDNIGHT)) {
-            return dt.format(OUTPUT_DATE);
-        }
-        return dt.format(OUTPUT_DATE_TIME);
-    }
-
-    /**
-     * Represents the completion status of a task.
-     */
-    enum Status {
-        DONE("X"),
-        NOT_DONE(" ");
-
-        final String icon;
-
-        /**
-         * Creates a status with the icon used in the UI.
-         *
-         * @param icon Icon representing the status.
-         */
-        Status(String icon) {
-            this.icon = icon;
-        }
-    }
-
-    /**
-     * Represents a task with a description and completion status.
-     */
-    static class Task {
-        String description;
-        Status status;
-
-        /**
-         * Creates a task with the given description and an initial NOT_DONE status.
-         *
-         * @param description Task description.
-         */
-        Task(String description) {
-            this.description = description;
-            this.status = Status.NOT_DONE;
-        }
-
-        /**
-         * Returns the status icon for this task.
-         *
-         * @return Status icon.
-         */
-        String statusIcon() {
-            return status.icon;
-        }
-
-        /**
-         * Returns the type icon for this task.
-         *
-         * @return Type icon (empty by default).
-         */
-        String typeIcon() {
-            return "";
-        }
-
-        @Override
-        public String toString() {
-            // default: no type
-            return "[" + statusIcon() + "] " + description;
-        }
-    }
-
-    /**
-     * Represents a Todo task.
-     */
-    static class Todo extends Task {
-        Todo(String description) {
-            super(description);
-        }
-
-        @Override
-        public String toString() {
-            return "[T]" + "[" + statusIcon() + "] " + description;
-        }
-    }
-
-    /**
-     * Represents a Deadline task with a deadline time.
-     */
-    static class Deadline extends Task {
-        LocalDateTime by;
-
-        Deadline(String description, LocalDateTime by) {
-            super(description);
-            this.by = by;
-        }
-
-        @Override
-        public String toString() {
-            return "[D]" + "[" + statusIcon() + "] " + description + " (by: " + formatForUi(by) + ")";
-        }
-    }
-
-    /**
-     * Represents an Event task with a start and end time.
-     */
-    static class Event extends Task {
-        LocalDateTime from;
-        LocalDateTime to;
-
-        Event(String description, LocalDateTime from, LocalDateTime to) {
-            super(description);
-            this.from = from;
-            this.to = to;
-        }
-
-        @Override
-        public String toString() {
-            return "[E]" + "[" + statusIcon() + "] " + description
-                    + " (from: " + formatForUi(from) + " to: " + formatForUi(to) + ")";
-        }
-    }
 
     /**
      * Loads tasks from disk into an in-memory list.
@@ -258,7 +76,7 @@ public class Bob {
      * @return Storage line representing the task.
      */
     private static String formatTaskLine(Task task) {
-        String isDone = (task.status == Status.DONE) ? "1" : "0";
+        String isDone = (task.status == Task.Status.DONE) ? "1" : "0";
 
         if (task instanceof Todo) {
             return "T | " + isDone + " | " + task.description;
@@ -266,14 +84,14 @@ public class Bob {
 
         if (task instanceof Deadline) {
             Deadline deadline = (Deadline) task;
-            return "D | " + isDone + " | " + deadline.description + " | " + deadline.by.format(STORAGE_DATE_TIME);
+            return "D | " + isDone + " | " + deadline.description + " | " + deadline.by.format(DateTimeUtil.STORAGE_DATE_TIME);
         }
 
         if (task instanceof Event) {
             Event event = (Event) task;
             return "E | " + isDone + " | " + event.description
-                    + " | " + event.from.format(STORAGE_DATE_TIME)
-                    + " | " + event.to.format(STORAGE_DATE_TIME);
+                    + " | " + event.from.format(DateTimeUtil.STORAGE_DATE_TIME)
+                    + " | " + event.to.format(DateTimeUtil.STORAGE_DATE_TIME);
         }
         return "";
     }
@@ -302,20 +120,20 @@ public class Bob {
                 if (parts.length < 4) {
                     return null;
                 }
-                LocalDateTime by = LocalDateTime.parse(parts[3], STORAGE_DATE_TIME);
+                LocalDateTime by = LocalDateTime.parse(parts[3], DateTimeUtil.STORAGE_DATE_TIME);
                 task = new Deadline(description, by);
             } else if ("E".equals(type)) {
                 if (parts.length < 5) {
                     return null;
                 }
-                LocalDateTime from = LocalDateTime.parse(parts[3], STORAGE_DATE_TIME);
-                LocalDateTime to = LocalDateTime.parse(parts[4], STORAGE_DATE_TIME);
+                LocalDateTime from = LocalDateTime.parse(parts[3], DateTimeUtil.STORAGE_DATE_TIME);
+                LocalDateTime to = LocalDateTime.parse(parts[4], DateTimeUtil.STORAGE_DATE_TIME);
                 task = new Event(description, from, to);
             } else {
                 return null;
             }
 
-            task.status = "1".equals(isDone) ? Status.DONE : Status.NOT_DONE;
+            task.status = "1".equals(isDone) ? Task.Status.DONE : Task.Status.NOT_DONE;
             return task;
         } catch (Exception e) {
             return null; // corrupted line -> skip
@@ -359,7 +177,7 @@ public class Bob {
                 int idx = parseIndex(input, "mark ");
                 if (idx >= 0 && idx < tasks.size()) {
                     Task t = tasks.get(idx);
-                    t.status = Status.DONE;
+                    t.status = Task.Status.DONE;
                     saveTasksToDisk(tasks);
 
                     System.out.println(LINE);
@@ -377,7 +195,7 @@ public class Bob {
                 int idx = parseIndex(input, "unmark ");
                 if (idx >= 0 && idx < tasks.size()) {
                     Task t = tasks.get(idx);
-                    t.status = Status.NOT_DONE;
+                    t.status = Task.Status.NOT_DONE;
                     saveTasksToDisk(tasks);
 
                     System.out.println(LINE);
@@ -461,7 +279,7 @@ public class Bob {
                 }
 
                 try {
-                    LocalDateTime by = parseUserDateTime(byRaw);
+                    LocalDateTime by = DateTimeUtil.parseUserDateTime(byRaw);
                     Task t = new Deadline(desc, by);
                     tasks.add(t);
                     saveTasksToDisk(tasks);
@@ -507,8 +325,8 @@ public class Bob {
                 }
 
                 try {
-                    LocalDateTime from = parseUserDateTime(fromRaw);
-                    LocalDateTime to = parseUserDateTime(toRaw);
+                    LocalDateTime from = DateTimeUtil.parseUserDateTime(fromRaw);
+                    LocalDateTime to = DateTimeUtil.parseUserDateTime(toRaw);
 
                     if (to.isBefore(from)) {
                         printError("WRONG!!! Event end time must be after start time.");
@@ -536,7 +354,7 @@ public class Bob {
                     LocalDate date = LocalDate.parse(dateRaw, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
                     System.out.println(LINE);
-                    System.out.println("Here are the tasks occurring on " + date.format(OUTPUT_DATE) + ":");
+                    System.out.println("Here are the tasks occurring on " + DateTimeUtil.formatDateForDisplay(date) + ":");
 
                     LocalDateTime start = date.atStartOfDay();
                     LocalDateTime end = date.plusDays(1).atStartOfDay().minusNanos(1);
@@ -580,7 +398,7 @@ public class Bob {
 
 
     /**
-     * Prints an error message wrapped with divider lines, following format.
+     * Prints an error message wrapped with divider lines.
      *
      * @param message Error message to print.
      */
@@ -605,7 +423,7 @@ public class Bob {
     }
 
     /**
-     * Returns the 0-based index parsed from a command string that contains a 1-based task number.
+     * Parses a 0-based index from a command string that contains a 1-based task number.
      *
      * @param input Full user input.
      * @param prefix Command prefix (e.g., "mark ", "delete ").
