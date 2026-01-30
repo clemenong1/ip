@@ -94,14 +94,14 @@ public class Storage {
 
         if (task instanceof Deadline) {
             Deadline deadline = (Deadline) task;
-            return "D | " + isDone + " | " + deadline.getDescription() + " | " + deadline.by.format(DateTimeUtil.STORAGE_DATE_TIME);
+            return "D | " + isDone + " | " + deadline.getDescription() + " | " + deadline.getBy().format(DateTimeUtil.STORAGE_DATE_TIME);
         }
 
         if (task instanceof Event) {
             Event event = (Event) task;
             return "E | " + isDone + " | " + event.getDescription()
-                    + " | " + event.from.format(DateTimeUtil.STORAGE_DATE_TIME)
-                    + " | " + event.to.format(DateTimeUtil.STORAGE_DATE_TIME);
+                    + " | " + event.getFrom().format(DateTimeUtil.STORAGE_DATE_TIME)
+                    + " | " + event.getTo().format(DateTimeUtil.STORAGE_DATE_TIME);
         }
         return "";
     }
