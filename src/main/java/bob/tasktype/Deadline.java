@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import bob.task.Task;
 import bob.util.DateTimeUtil;
 
+/**
+ * A task with a description and a single deadline time.
+ */
 public class Deadline extends Task {
     private LocalDateTime by;
 

@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import bob.task.Task;
 import bob.util.DateTimeUtil;
 
+/**
+ * A task with a description and a start and end time.
+ */
 public class Event extends Task {
     private LocalDateTime from;
     private LocalDateTime to;
