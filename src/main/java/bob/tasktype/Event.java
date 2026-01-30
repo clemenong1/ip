@@ -1,4 +1,9 @@
+package bob.tasktype;
+
 import java.time.LocalDateTime;
+
+import bob.task.Task;
+import bob.util.DateTimeUtil;
 
 public class Event extends Task {
     public LocalDateTime from;
@@ -19,7 +24,7 @@ public class Event extends Task {
 
     @Override
     public String toString() {
-        return "[E]" + "[" + statusIcon() + "] " + description
+        return "[E]" + "[" + statusIcon() + "] " + getDescription()
                 + " (from: " + DateTimeUtil.formatForDisplay(from) + " to: " + DateTimeUtil.formatForDisplay(to) + ")";
     }
 }

@@ -1,3 +1,5 @@
+package bob.storage;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -9,6 +11,12 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import java.time.LocalDateTime;
+
+import bob.task.Task;
+import bob.tasktype.Todo;
+import bob.tasktype.Deadline;
+import bob.tasktype.Event;
+import bob.util.DateTimeUtil;
 
 /**
  * Handles loading tasks from file and saving tasks to file.
@@ -78,20 +86,20 @@ public class Storage {
      * @return Storage line representing the task.
      */
     private String formatTaskLine(Task task) {
-        String isDone = (task.status == Task.Status.DONE) ? "1" : "0";
+        String isDone = (task.getStatus() == Task.Status.DONE) ? "1" : "0";
 
         if (task instanceof Todo) {
-            return "T | " + isDone + " | " + task.description;
+            return "T | " + isDone + " | " + task.getDescription();
         }
 
         if (task instanceof Deadline) {
             Deadline deadline = (Deadline) task;
-            return "D | " + isDone + " | " + deadline.description + " | " + deadline.by.format(DateTimeUtil.STORAGE_DATE_TIME);
+            return "D | " + isDone + " | " + deadline.getDescription() + " | " + deadline.by.format(DateTimeUtil.STORAGE_DATE_TIME);
         }
 
         if (task instanceof Event) {
             Event event = (Event) task;
-            return "E | " + isDone + " | " + event.description
+            return "E | " + isDone + " | " + event.getDescription()
                     + " | " + event.from.format(DateTimeUtil.STORAGE_DATE_TIME)
                     + " | " + event.to.format(DateTimeUtil.STORAGE_DATE_TIME);
         }
@@ -135,7 +143,7 @@ public class Storage {
                 return null;
             }
 
-            task.status = "1".equals(isDone) ? Task.Status.DONE : Task.Status.NOT_DONE;
+            task.setStatus("1".equals(isDone) ? Task.Status.DONE : Task.Status.NOT_DONE);
             return task;
         } catch (Exception e) {
             return null; // corrupted line -> skip

@@ -1,3 +1,7 @@
+package bob.tasktype;
+
+import bob.task.Task;
+
 public class Todo extends Task {
     /**
      * Creates a new todo task with the given description.

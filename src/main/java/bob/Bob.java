@@ -1,3 +1,5 @@
+package bob;
+
 import java.io.IOException;
 
 import java.util.ArrayList;
@@ -5,6 +7,16 @@ import java.util.ArrayList;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+
+import bob.storage.Storage;
+import bob.task.Task;
+import bob.task.TaskList;
+import bob.tasktype.Todo;
+import bob.tasktype.Deadline;
+import bob.tasktype.Event;
+import bob.ui.Ui;
+import bob.parser.Parser;
+import bob.util.DateTimeUtil;
 
 /**
  * Runs the Bob chatbot application that manages a list of tasks.
@@ -57,7 +69,7 @@ public class Bob {
                 int idx = Parser.parseIndex(input, "mark ");
                 if (tasks.isValidIndex(idx)) {
                     Task t = tasks.get(idx);
-                    t.status = Task.Status.DONE;
+                    t.setStatus(Task.Status.DONE);
                     try {
                         storage.save(tasks.getAllTasks());
                     } catch (IOException e) {
@@ -75,7 +87,7 @@ public class Bob {
                 int idx = Parser.parseIndex(input, "unmark ");
                 if (tasks.isValidIndex(idx)) {
                     Task t = tasks.get(idx);
-                    t.status = Task.Status.NOT_DONE;
+                    t.setStatus(Task.Status.NOT_DONE);
                     try {
                         storage.save(tasks.getAllTasks());
                     } catch (IOException e) {

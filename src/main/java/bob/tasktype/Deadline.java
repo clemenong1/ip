@@ -1,4 +1,9 @@
+package bob.tasktype;
+
 import java.time.LocalDateTime;
+
+import bob.task.Task;
+import bob.util.DateTimeUtil;
 
 public class Deadline extends Task {
     public LocalDateTime by;
@@ -16,7 +21,7 @@ public class Deadline extends Task {
 
     @Override
     public String toString() {
-        return "[D]" + "[" + statusIcon() + "] " + description
+        return "[D]" + "[" + statusIcon() + "] " + getDescription()
                 + " (by: " + DateTimeUtil.formatForDisplay(by) + ")";
     }
 }

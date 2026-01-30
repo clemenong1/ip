@@ -1,5 +1,10 @@
+package bob.ui;
+
 import java.util.ArrayList;
 import java.util.Scanner;
+
+import bob.task.Task;
+import bob.util.DateTimeUtil;
 
 /**
  * Handles user interface interactions for the Bob chatbot.

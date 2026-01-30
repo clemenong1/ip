@@ -1,3 +1,5 @@
+package bob.task;
+
 import java.util.ArrayList;
 
 /**

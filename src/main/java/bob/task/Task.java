@@ -1,3 +1,5 @@
+package bob.task;
+
 public class Task {
     public enum Status {
         DONE("X"),
@@ -39,6 +41,10 @@ public class Task {
 
     public Status getStatus() {
         return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
     public String getDescription() {
