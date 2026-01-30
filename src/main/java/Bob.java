@@ -1,10 +1,4 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import java.util.ArrayList;
 
@@ -17,130 +11,19 @@ import java.time.format.DateTimeParseException;
  * Runs the Bob chatbot application that manages a list of tasks.
  */
 public class Bob {
-    private static final Path DATA_DIRECTORY = Paths.get("data");
-    private static final Path DATA_FILE_PATH = DATA_DIRECTORY.resolve("duke.txt");
-
-    /**
-     * Loads tasks from disk into an in-memory list.
-     *
-     * @return List of tasks loaded from disk. Returns an empty list if the file does not exist.
-     */
-    private static ArrayList<Task> loadTasksFromDisk() {
-        ArrayList<Task> tasks = new ArrayList<>();
-
-        if (!Files.exists(DATA_FILE_PATH)) {
-            return tasks;
-        }
-
-        try (BufferedReader reader = Files.newBufferedReader(DATA_FILE_PATH)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                Task task = parseTaskLine(line);
-                if (task != null) {
-                    tasks.add(task);
-                }
-            }
-        } catch (IOException e) {
-            System.out.println("Could not load tasks: " + e.getMessage());
-        }
-
-        return tasks;
-    }
-
-    /**
-     * Saves the given list of tasks to disk.
-     *
-     * @param tasks List of tasks to save.
-     */
-    private static void saveTasksToDisk(ArrayList<Task> tasks) {
-        try {
-            Files.createDirectories(DATA_DIRECTORY);
-
-            try (BufferedWriter writer = Files.newBufferedWriter(DATA_FILE_PATH)) {
-                for (Task task : tasks) {
-                    writer.write(formatTaskLine(task));
-                    writer.newLine();
-                }
-            }
-        } catch (IOException e) {
-            System.out.println("Could not save tasks: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Returns the storage format line for a given task.
-     *
-     * @param task Task to format.
-     * @return Storage line representing the task.
-     */
-    private static String formatTaskLine(Task task) {
-        String isDone = (task.status == Task.Status.DONE) ? "1" : "0";
-
-        if (task instanceof Todo) {
-            return "T | " + isDone + " | " + task.description;
-        }
-
-        if (task instanceof Deadline) {
-            Deadline deadline = (Deadline) task;
-            return "D | " + isDone + " | " + deadline.description + " | " + deadline.by.format(DateTimeUtil.STORAGE_DATE_TIME);
-        }
-
-        if (task instanceof Event) {
-            Event event = (Event) task;
-            return "E | " + isDone + " | " + event.description
-                    + " | " + event.from.format(DateTimeUtil.STORAGE_DATE_TIME)
-                    + " | " + event.to.format(DateTimeUtil.STORAGE_DATE_TIME);
-        }
-        return "";
-    }
-
-    /**
-     * Parses a storage format line into a Task instance.
-     *
-     * @param line Storage line.
-     * @return Parsed task, or null if the line is invalid/corrupted.
-     */
-    private static Task parseTaskLine(String line) {
-        try {
-            String[] parts = line.split("\\s*\\|\\s*");
-            if (parts.length < 3) {
-                return null;
-            }
-
-            String type = parts[0];
-            String isDone = parts[1];
-            String description = parts[2];
-
-            Task task;
-            if ("T".equals(type)) {
-                task = new Todo(description);
-            } else if ("D".equals(type)) {
-                if (parts.length < 4) {
-                    return null;
-                }
-                LocalDateTime by = LocalDateTime.parse(parts[3], DateTimeUtil.STORAGE_DATE_TIME);
-                task = new Deadline(description, by);
-            } else if ("E".equals(type)) {
-                if (parts.length < 5) {
-                    return null;
-                }
-                LocalDateTime from = LocalDateTime.parse(parts[3], DateTimeUtil.STORAGE_DATE_TIME);
-                LocalDateTime to = LocalDateTime.parse(parts[4], DateTimeUtil.STORAGE_DATE_TIME);
-                task = new Event(description, from, to);
-            } else {
-                return null;
-            }
-
-            task.status = "1".equals(isDone) ? Task.Status.DONE : Task.Status.NOT_DONE;
-            return task;
-        } catch (Exception e) {
-            return null; // corrupted line -> skip
-        }
-    }
+    private static final String DATA_FILE_PATH = "data/duke.txt";
 
     public static void main(String[] args) {
         Ui ui = new Ui();
-        ArrayList<Task> tasks = loadTasksFromDisk();
+        Storage storage = new Storage(DATA_FILE_PATH);
+        ArrayList<Task> tasks;
+
+        try {
+            tasks = storage.load();
+        } catch (IOException e) {
+            ui.showError("Could not load tasks: " + e.getMessage());
+            tasks = new ArrayList<>();
+        }
 
         // Greeting
         ui.showWelcome();
@@ -166,7 +49,11 @@ public class Bob {
                 if (idx >= 0 && idx < tasks.size()) {
                     Task t = tasks.get(idx);
                     t.status = Task.Status.DONE;
-                    saveTasksToDisk(tasks);
+                    try {
+                        storage.save(tasks);
+                    } catch (IOException e) {
+                        ui.showError("Could not save tasks: " + e.getMessage());
+                    }
                     ui.showMarkedTask(t);
                 } else {
                     ui.showError("WRONG!!! That task number does not exist.");
@@ -180,7 +67,11 @@ public class Bob {
                 if (idx >= 0 && idx < tasks.size()) {
                     Task t = tasks.get(idx);
                     t.status = Task.Status.NOT_DONE;
-                    saveTasksToDisk(tasks);
+                    try {
+                        storage.save(tasks);
+                    } catch (IOException e) {
+                        ui.showError("Could not save tasks: " + e.getMessage());
+                    }
                     ui.showUnmarkedTask(t);
                 } else {
                     ui.showError("WRONG!!! That task number does not exist.");
@@ -198,7 +89,11 @@ public class Bob {
                 int idx = parseIndex(input, "delete ");
                 if (idx >= 0 && idx < tasks.size()) {
                     Task removed = tasks.remove(idx);
-                    saveTasksToDisk(tasks);
+                    try {
+                        storage.save(tasks);
+                    } catch (IOException e) {
+                        ui.showError("Could not save tasks: " + e.getMessage());
+                    }
                     ui.showDeletedTask(removed, tasks.size());
                 } else {
                     ui.showError("WRONG!!! That task number does not exist.");
@@ -221,7 +116,11 @@ public class Bob {
 
                 Task t = new Todo(desc);
                 tasks.add(t);
-                saveTasksToDisk(tasks);
+                try {
+                    storage.save(tasks);
+                } catch (IOException e) {
+                    ui.showError("Could not save tasks: " + e.getMessage());
+                }
                 ui.showAddedTask(t, tasks.size());
                 continue;
             }
@@ -257,7 +156,11 @@ public class Bob {
                     LocalDateTime by = DateTimeUtil.parseUserDateTime(byRaw);
                     Task t = new Deadline(desc, by);
                     tasks.add(t);
-                    saveTasksToDisk(tasks);
+                    try {
+                        storage.save(tasks);
+                    } catch (IOException e) {
+                        ui.showError("Could not save tasks: " + e.getMessage());
+                    }
                     ui.showAddedTask(t, tasks.size());
                 } catch (DateTimeParseException e) {
                     ui.showError("WRONG!!! Invalid date/time.\n"
@@ -310,7 +213,11 @@ public class Bob {
 
                     Task t = new Event(desc, from, to);
                     tasks.add(t);
-                    saveTasksToDisk(tasks);
+                    try {
+                        storage.save(tasks);
+                    } catch (IOException e) {
+                        ui.showError("Could not save tasks: " + e.getMessage());
+                    }
                     ui.showAddedTask(t, tasks.size());
                 } catch (DateTimeParseException e) {
                     ui.showError("WRONG!!! Invalid date/time.\n"
