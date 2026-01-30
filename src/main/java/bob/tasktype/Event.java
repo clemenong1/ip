@@ -6,8 +6,8 @@ import bob.task.Task;
 import bob.util.DateTimeUtil;
 
 public class Event extends Task {
-    public LocalDateTime from;
-    public LocalDateTime to;
+    private LocalDateTime from;
+    private LocalDateTime to;
 
     /**
      * Creates a new event task with the given description, start time, and end time.
@@ -22,9 +22,27 @@ public class Event extends Task {
         this.to = to;
     }
 
+    /**
+     * Returns the start time of this event.
+     *
+     * @return Start time.
+     */
+    public LocalDateTime getFrom() {
+        return from;
+    }
+
+    /**
+     * Returns the end time of this event.
+     *
+     * @return End time.
+     */
+    public LocalDateTime getTo() {
+        return to;
+    }
+
     @Override
     public String toString() {
         return "[E]" + "[" + statusIcon() + "] " + getDescription()
-                + " (from: " + DateTimeUtil.formatForDisplay(from) + " to: " + DateTimeUtil.formatForDisplay(to) + ")";
+                + " (from: " + DateTimeUtil.formatForDisplay(getFrom()) + " to: " + DateTimeUtil.formatForDisplay(getTo()) + ")";
     }
 }
