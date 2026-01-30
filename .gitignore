@@ -6,6 +6,9 @@
 # Gradle build files
 /.gradle/
 /build/
+
+# Generated JAR (do not commit; use GitHub Releases to distribute)
+bob.jar
 src/main/resources/docs/
 
 # MacOS custom attributes files created by Finder
