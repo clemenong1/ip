@@ -16,13 +16,13 @@ public class Bob {
     public static void main(String[] args) {
         Ui ui = new Ui();
         Storage storage = new Storage(DATA_FILE_PATH);
-        ArrayList<Task> tasks;
+        TaskList tasks;
 
         try {
-            tasks = storage.load();
+            tasks = new TaskList(storage.load());
         } catch (IOException e) {
             ui.showError("Could not load tasks: " + e.getMessage());
-            tasks = new ArrayList<>();
+            tasks = new TaskList();
         }
 
         // Greeting
@@ -39,18 +39,18 @@ public class Bob {
 
             // LIST
             if (input.equals("list")) {
-                ui.showTaskList(tasks);
+                ui.showTaskList(tasks.getAllTasks());
                 continue;
             }
 
             // MARK
             if (input.startsWith("mark ")) {
                 int idx = parseIndex(input, "mark ");
-                if (idx >= 0 && idx < tasks.size()) {
+                if (tasks.isValidIndex(idx)) {
                     Task t = tasks.get(idx);
                     t.status = Task.Status.DONE;
                     try {
-                        storage.save(tasks);
+                        storage.save(tasks.getAllTasks());
                     } catch (IOException e) {
                         ui.showError("Could not save tasks: " + e.getMessage());
                     }
@@ -64,11 +64,11 @@ public class Bob {
             // UNMARK
             if (input.startsWith("unmark ")) {
                 int idx = parseIndex(input, "unmark ");
-                if (idx >= 0 && idx < tasks.size()) {
+                if (tasks.isValidIndex(idx)) {
                     Task t = tasks.get(idx);
                     t.status = Task.Status.NOT_DONE;
                     try {
-                        storage.save(tasks);
+                        storage.save(tasks.getAllTasks());
                     } catch (IOException e) {
                         ui.showError("Could not save tasks: " + e.getMessage());
                     }
@@ -87,10 +87,10 @@ public class Bob {
 
             if (input.startsWith("delete ")) {
                 int idx = parseIndex(input, "delete ");
-                if (idx >= 0 && idx < tasks.size()) {
+                if (tasks.isValidIndex(idx)) {
                     Task removed = tasks.remove(idx);
                     try {
-                        storage.save(tasks);
+                        storage.save(tasks.getAllTasks());
                     } catch (IOException e) {
                         ui.showError("Could not save tasks: " + e.getMessage());
                     }
@@ -117,7 +117,7 @@ public class Bob {
                 Task t = new Todo(desc);
                 tasks.add(t);
                 try {
-                    storage.save(tasks);
+                    storage.save(tasks.getAllTasks());
                 } catch (IOException e) {
                     ui.showError("Could not save tasks: " + e.getMessage());
                 }
@@ -157,7 +157,7 @@ public class Bob {
                     Task t = new Deadline(desc, by);
                     tasks.add(t);
                     try {
-                        storage.save(tasks);
+                        storage.save(tasks.getAllTasks());
                     } catch (IOException e) {
                         ui.showError("Could not save tasks: " + e.getMessage());
                     }
@@ -214,7 +214,7 @@ public class Bob {
                     Task t = new Event(desc, from, to);
                     tasks.add(t);
                     try {
-                        storage.save(tasks);
+                        storage.save(tasks.getAllTasks());
                     } catch (IOException e) {
                         ui.showError("Could not save tasks: " + e.getMessage());
                     }
@@ -269,8 +269,6 @@ public class Bob {
         }
         ui.close();
     }
-
-
 
     /**
      * Parses a 0-based index from a command string that contains a 1-based task number.
