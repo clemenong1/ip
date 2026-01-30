@@ -9,7 +9,7 @@ import bob.util.DateTimeUtil;
  * A task with a description and a single deadline time.
  */
 public class Deadline extends Task {
-    public LocalDateTime by;
+    private LocalDateTime by;
 
     /**
      * Creates a new deadline task with the given description and deadline time.
@@ -22,9 +22,18 @@ public class Deadline extends Task {
         this.by = by;
     }
 
+    /**
+     * Returns the deadline time of this task.
+     *
+     * @return Deadline time.
+     */
+    public LocalDateTime getBy() {
+        return by;
+    }
+
     @Override
     public String toString() {
         return "[D]" + "[" + statusIcon() + "] " + getDescription()
-                + " (by: " + DateTimeUtil.formatForDisplay(by) + ")";
+                + " (by: " + DateTimeUtil.formatForDisplay(getBy()) + ")";
     }
 }

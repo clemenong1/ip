@@ -20,7 +20,7 @@ public class Parser {
             String numberPart = input.substring(prefix.length()).trim();
             int oneBased = Integer.parseInt(numberPart);
             return oneBased - 1;
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             return -1;
         }
     }

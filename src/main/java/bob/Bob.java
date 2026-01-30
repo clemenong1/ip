@@ -247,11 +247,11 @@ public class Bob {
 
                         if (t instanceof Deadline) {
                             Deadline d = (Deadline) t;
-                            matches = d.by.toLocalDate().equals(date);
+                            matches = d.getBy().toLocalDate().equals(date);
                         } else if (t instanceof Event) {
                             Event e = (Event) t;
                             // overlaps the day
-                            matches = !e.to.isBefore(start) && !e.from.isAfter(end);
+                            matches = !e.getTo().isBefore(start) && !e.getFrom().isAfter(end);
                         }
 
                         if (matches) {
