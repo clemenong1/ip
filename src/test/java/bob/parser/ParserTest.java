@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @DisplayName("Parser")
 class ParserTest {
 
-    // ---------- parseIndex ----------
+    /* ---------- parseIndex ---------- */ 
 
     @Test
     @DisplayName("parseIndex: valid 1-based input returns 0-based index")
@@ -55,7 +55,7 @@ class ParserTest {
         assertEquals(-2, Parser.parseIndex("mark -1", "mark "));
     }
 
-    // ---------- parseDeadlineArgs ----------
+    /* ---------- parseDeadlineArgs ---------- */ 
 
     @Test
     @DisplayName("parseDeadlineArgs: valid command returns description and by")
@@ -101,6 +101,21 @@ class ParserTest {
     void parseDeadlineArgs_descriptionWithSpaces() {
         String[] result = Parser.parseDeadlineArgs("deadline buy milk and eggs /by 2025-01-20 0900");
         assertArrayEquals(new String[]{"buy milk and eggs", "2025-01-20 0900"}, result);
+    }
+
+    // ---------- parseFindKeyword ----------
+
+    @Test
+    @DisplayName("parseFindKeyword: valid input returns keyword")
+    void parseFindKeyword_validInput_returnsKeyword() {
+        assertEquals("book", Parser.parseFindKeyword("find book"));
+        assertEquals("return book", Parser.parseFindKeyword("find return book"));
+    }
+
+    @Test
+    @DisplayName("parseFindKeyword: trims whitespace")
+    void parseFindKeyword_trimsWhitespace() {
+        assertEquals("book", Parser.parseFindKeyword("find  book  "));
     }
 
     // ---------- parseOnDate (bonus: third method from same class) ----------

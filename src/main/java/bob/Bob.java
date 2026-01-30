@@ -230,6 +230,19 @@ public class Bob {
                 continue;
             }
 
+            // FIND (search tasks by keyword in description)
+            if (input.equals("find")) {
+                ui.showError("WRONG!!! Please specify a keyword to search for.");
+                continue;
+            }
+
+            if (input.startsWith("find ")) {
+                String keyword = Parser.parseFindKeyword(input);
+                ArrayList<Task> matchingTasks = tasks.findTasksByKeyword(keyword);
+                ui.showMatchingTasks(matchingTasks);
+                continue;
+            }
+
             // ON (lists deadlines/events on a specific date)
             if (input.startsWith("on ")) {
                 LocalDate date;
