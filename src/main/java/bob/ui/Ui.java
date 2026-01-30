@@ -133,6 +133,20 @@ public class Ui {
     }
 
     /**
+     * Shows tasks that match a search keyword.
+     *
+     * @param tasks List of matching tasks to display.
+     */
+    public void showMatchingTasks(ArrayList<Task> tasks) {
+        showLine();
+        System.out.println("Here are the matching tasks in your list:");
+        for (int i = 0; i < tasks.size(); i++) {
+            System.out.println((i + 1) + "." + tasks.get(i));
+        }
+        showLine();
+    }
+
+    /**
      * Shows tasks occurring on a specific date.
      *
      * @param date Date to display in the header.

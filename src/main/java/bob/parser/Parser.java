@@ -96,6 +96,16 @@ public class Parser {
     }
 
     /**
+     * Parses the search keyword from a find command.
+     *
+     * @param input Full user input (e.g. "find book").
+     * @return The trimmed keyword to search for.
+     */
+    public static String parseFindKeyword(String input) {
+        return input.substring("find ".length()).trim();
+    }
+
+    /**
      * Parses the date from an "on" command.
      *
      * @param input Full user input.
