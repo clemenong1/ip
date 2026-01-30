@@ -7,7 +7,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import java.util.ArrayList;
-import java.util.Scanner;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,7 +17,6 @@ import java.time.format.DateTimeParseException;
  * Runs the Bob chatbot application that manages a list of tasks.
  */
 public class Bob {
-    private static final String LINE = "____________________________________________________________";
     private static final Path DATA_DIRECTORY = Paths.get("data");
     private static final Path DATA_FILE_PATH = DATA_DIRECTORY.resolve("duke.txt");
 
@@ -141,34 +139,24 @@ public class Bob {
     }
 
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
+        Ui ui = new Ui();
         ArrayList<Task> tasks = loadTasksFromDisk();
 
         // Greeting
-        System.out.println(LINE);
-        System.out.println("Hello! I'm Bob");
-        System.out.println("What can I do for you?");
-        System.out.println(LINE);
+        ui.showWelcome();
 
         while (true) {
-            String input = sc.nextLine().trim();
+            String input = ui.readCommand();
 
             // Exit
             if (input.equalsIgnoreCase("bye")) {
-                System.out.println(LINE);
-                System.out.println("Bye. Hope to see you again soon!");
-                System.out.println(LINE);
+                ui.showGoodbye();
                 break;
             }
 
             // LIST
             if (input.equals("list")) {
-                System.out.println(LINE);
-                System.out.println("Here are the tasks in your list:");
-                for (int i = 0; i < tasks.size(); i++) {
-                    System.out.println((i + 1) + "." + tasks.get(i));
-                }
-                System.out.println(LINE);
+                ui.showTaskList(tasks);
                 continue;
             }
 
@@ -179,13 +167,9 @@ public class Bob {
                     Task t = tasks.get(idx);
                     t.status = Task.Status.DONE;
                     saveTasksToDisk(tasks);
-
-                    System.out.println(LINE);
-                    System.out.println("Nice! I've marked this task as done:");
-                    System.out.println("  " + t);
-                    System.out.println(LINE);
+                    ui.showMarkedTask(t);
                 } else {
-                    printError("WRONG!!! That task number does not exist.");
+                    ui.showError("WRONG!!! That task number does not exist.");
                 }
                 continue;
             }
@@ -197,20 +181,16 @@ public class Bob {
                     Task t = tasks.get(idx);
                     t.status = Task.Status.NOT_DONE;
                     saveTasksToDisk(tasks);
-
-                    System.out.println(LINE);
-                    System.out.println("OK, I've marked this task as not done yet:");
-                    System.out.println("  " + t);
-                    System.out.println(LINE);
+                    ui.showUnmarkedTask(t);
                 } else {
-                    printError("WRONG!!! That task number does not exist.");
+                    ui.showError("WRONG!!! That task number does not exist.");
                 }
                 continue;
             }
 
             // DELETE
             if (input.equals("delete")) {
-                printError("WRONG!!! Please specify a task number to delete.");
+                ui.showError("WRONG!!! Please specify a task number to delete.");
                 continue;
             }
 
@@ -219,41 +199,36 @@ public class Bob {
                 if (idx >= 0 && idx < tasks.size()) {
                     Task removed = tasks.remove(idx);
                     saveTasksToDisk(tasks);
-
-                    System.out.println(LINE);
-                    System.out.println("Noted. I've removed this task:");
-                    System.out.println("  " + removed);
-                    System.out.println("Now you have " + tasks.size() + " tasks in the list.");
-                    System.out.println(LINE);
+                    ui.showDeletedTask(removed, tasks.size());
                 } else {
-                    printError("WRONG!!! That task number does not exist.");
+                    ui.showError("WRONG!!! That task number does not exist.");
                 }
                 continue;
             }
 
             // TODO (handles empty todo)
             if (input.equals("todo")) {
-                printError("WRONG!!! Add a description for your todo.");
+                ui.showError("WRONG!!! Add a description for your todo.");
                 continue;
             }
 
             if (input.startsWith("todo ")) {
                 String desc = input.substring("todo ".length()).trim();
                 if (desc.isEmpty()) {
-                    printError("WRONG!!! Add a description for your todo.");
+                    ui.showError("WRONG!!! Add a description for your todo.");
                     continue;
                 }
 
                 Task t = new Todo(desc);
                 tasks.add(t);
                 saveTasksToDisk(tasks);
-                printAdded(t, tasks.size());
+                ui.showAddedTask(t, tasks.size());
                 continue;
             }
 
             // DEADLINE (handles missing /by)
             if (input.equals("deadline")) {
-                printError("WRONG!!! Add a description for your deadline task.");
+                ui.showError("WRONG!!! Add a description for your deadline task.");
                 continue;
             }
 
@@ -262,7 +237,7 @@ public class Bob {
                 int byPos = rest.indexOf("/by");
 
                 if (byPos == -1) {
-                    printError("WRONG!!! A deadline must have '/by <time>'");
+                    ui.showError("WRONG!!! A deadline must have '/by <time>'");
                     continue;
                 }
 
@@ -270,11 +245,11 @@ public class Bob {
                 String byRaw = rest.substring(byPos + 3).trim();
 
                 if (desc.isEmpty()) {
-                    printError("WRONG!!! Add a description for your deadline task.");
+                    ui.showError("WRONG!!! Add a description for your deadline task.");
                     continue;
                 }
                 if (byRaw.isEmpty()) {
-                    printError("WRONG!!! The deadline time cannot be empty.");
+                    ui.showError("WRONG!!! The deadline time cannot be empty.");
                     continue;
                 }
 
@@ -283,9 +258,9 @@ public class Bob {
                     Task t = new Deadline(desc, by);
                     tasks.add(t);
                     saveTasksToDisk(tasks);
-                    printAdded(t, tasks.size());
+                    ui.showAddedTask(t, tasks.size());
                 } catch (DateTimeParseException e) {
-                    printError("WRONG!!! Invalid date/time.\n"
+                    ui.showError("WRONG!!! Invalid date/time.\n"
                             + "Use formats like:\n"
                             + "  2019-10-15\n"
                             + "  2019-10-15 1800\n"
@@ -296,7 +271,7 @@ public class Bob {
 
             // EVENT (handles missing /from or /to)
             if (input.equals("event")) {
-                printError("WRONG!!! Add a description for your event.");
+                ui.showError("WRONG!!! Add a description for your event.");
                 continue;
             }
 
@@ -307,7 +282,7 @@ public class Bob {
                 int toPos = rest.indexOf("/to");
 
                 if (fromPos == -1 || toPos == -1 || toPos < fromPos) {
-                    printError("WRONG!!! An event must have '/from <start> /to <end>'");
+                    ui.showError("WRONG!!! An event must have '/from <start> /to <end>'");
                     continue;
                 }
 
@@ -316,11 +291,11 @@ public class Bob {
                 String toRaw = rest.substring(toPos + 3).trim();
 
                 if (desc.isEmpty()) {
-                    printError("WRONG!!! Add a description for your event.");
+                    ui.showError("WRONG!!! Add a description for your event.");
                     continue;
                 }
                 if (fromRaw.isEmpty() || toRaw.isEmpty()) {
-                    printError("WRONG!!! The event start/end time cannot be empty.");
+                    ui.showError("WRONG!!! The event start/end time cannot be empty.");
                     continue;
                 }
 
@@ -329,16 +304,16 @@ public class Bob {
                     LocalDateTime to = DateTimeUtil.parseUserDateTime(toRaw);
 
                     if (to.isBefore(from)) {
-                        printError("WRONG!!! Event end time must be after start time.");
+                        ui.showError("WRONG!!! Event end time must be after start time.");
                         continue;
                     }
 
                     Task t = new Event(desc, from, to);
                     tasks.add(t);
                     saveTasksToDisk(tasks);
-                    printAdded(t, tasks.size());
+                    ui.showAddedTask(t, tasks.size());
                 } catch (DateTimeParseException e) {
-                    printError("WRONG!!! Invalid date/time.\n"
+                    ui.showError("WRONG!!! Invalid date/time.\n"
                             + "Use formats like:\n"
                             + "  2019-10-15\n"
                             + "  2019-10-15 1800\n"
@@ -353,13 +328,10 @@ public class Bob {
                 try {
                     LocalDate date = LocalDate.parse(dateRaw, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-                    System.out.println(LINE);
-                    System.out.println("Here are the tasks occurring on " + DateTimeUtil.formatDateForDisplay(date) + ":");
-
                     LocalDateTime start = date.atStartOfDay();
                     LocalDateTime end = date.plusDays(1).atStartOfDay().minusNanos(1);
 
-                    int count = 0;
+                    ArrayList<Task> matchingTasks = new ArrayList<>();
                     for (int i = 0; i < tasks.size(); i++) {
                         Task t = tasks.get(i);
 
@@ -375,52 +347,23 @@ public class Bob {
                         }
 
                         if (matches) {
-                            System.out.println((i + 1) + "." + t);
-                            count++;
+                            matchingTasks.add(t);
                         }
                     }
 
-                    if (count == 0) {
-                        System.out.println("No matching tasks.");
-                    }
-
-                    System.out.println(LINE);
+                    ui.showTasksOnDate(date, matchingTasks);
                 } catch (DateTimeParseException e) {
-                    printError("WRONG!!! Invalid date.\nUse: on yyyy-mm-dd (e.g., on 2019-12-02)");
+                    ui.showError("WRONG!!! Invalid date.\nUse: on yyyy-mm-dd (e.g., on 2019-12-02)");
                 }
                 continue;
             }
             // Unknown command
-            printError("WRONG!!! I'm sorry, but I don't know what that means :-(");
+            ui.showError("WRONG!!! I'm sorry, but I don't know what that means :-(");
         }
-        sc.close();
+        ui.close();
     }
 
 
-    /**
-     * Prints an error message wrapped with divider lines.
-     *
-     * @param message Error message to print.
-     */
-    private static void printError(String message) {
-        System.out.println(LINE);
-        System.out.println(message);
-        System.out.println(LINE);
-    }
-
-    /**
-     * Prints the confirmation message after a task is added.
-     *
-     * @param t Task that was added.
-     * @param total Total number of tasks after adding.
-     */
-    private static void printAdded(Task t, int total) {
-        System.out.println(LINE);
-        System.out.println("Got it. I've added this task:");
-        System.out.println("  " + t);
-        System.out.println("Now you have " + total + " tasks in the list.");
-        System.out.println(LINE);
-    }
 
     /**
      * Parses a 0-based index from a command string that contains a 1-based task number.
