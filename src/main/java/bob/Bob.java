@@ -46,7 +46,7 @@ public class Bob {
      * Runs the Bob chatbot application.
      */
     public void run() {
-        // Greeting
+        // Start with greet
         ui.showWelcome();
 
         while (true) {
