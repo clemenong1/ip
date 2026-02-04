@@ -1,14 +1,14 @@
 package bob.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for {@link DateTimeUtil}.
@@ -76,8 +76,7 @@ class DateTimeUtilTest {
                 DateTimeUtil.parseUserDateTime("2025/01/15 1800"));
     }
 
-    /* ---------- formatForDisplay ---------- */ 
-
+    /* ---------- formatForDisplay ---------- */
     @Test
     @DisplayName("formatForDisplay: midnight returns date-only format (MMM dd yyyy)")
     void formatForDisplay_midnight_returnsDateOnly() {

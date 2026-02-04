@@ -46,6 +46,7 @@ public class Event extends Task {
     @Override
     public String toString() {
         return "[E]" + "[" + statusIcon() + "] " + getDescription()
-                + " (from: " + DateTimeUtil.formatForDisplay(getFrom()) + " to: " + DateTimeUtil.formatForDisplay(getTo()) + ")";
+                + " (from: " + DateTimeUtil.formatForDisplay(getFrom())
+                + " to: " + DateTimeUtil.formatForDisplay(getTo()) + ")";
     }
 }
