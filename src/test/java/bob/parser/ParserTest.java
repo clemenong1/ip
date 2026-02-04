@@ -1,14 +1,14 @@
 package bob.parser;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for {@link Parser}.
@@ -16,8 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @DisplayName("Parser")
 class ParserTest {
 
-    /* ---------- parseIndex ---------- */ 
-
+    /* ---------- parseIndex ---------- */
     @Test
     @DisplayName("parseIndex: valid 1-based input returns 0-based index")
     void parseIndex_validOneBased_returnsZeroBased() {
@@ -55,8 +54,7 @@ class ParserTest {
         assertEquals(-2, Parser.parseIndex("mark -1", "mark "));
     }
 
-    /* ---------- parseDeadlineArgs ---------- */ 
-
+    /* ---------- parseDeadlineArgs ---------- */
     @Test
     @DisplayName("parseDeadlineArgs: valid command returns description and by")
     void parseDeadlineArgs_validCommand_returnsDescriptionAndBy() {

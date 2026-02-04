@@ -11,18 +11,18 @@ import java.util.Locale;
  * Utility for parsing and formatting dates and times (user input, display, storage).
  */
 public class DateTimeUtil {
-    private static final DateTimeFormatter OUTPUT_DATE =
-            DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
-
-    private static final DateTimeFormatter OUTPUT_DATE_TIME =
-            DateTimeFormatter.ofPattern("MMM dd yyyy HH:mm", Locale.ENGLISH);
-
     /**
      * Storage format kept consistent on disk.
      * Example: 2019-12-02 1800
      */
     public static final DateTimeFormatter STORAGE_DATE_TIME =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm");
+
+    private static final DateTimeFormatter OUTPUT_DATE =
+            DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
+
+    private static final DateTimeFormatter OUTPUT_DATE_TIME =
+            DateTimeFormatter.ofPattern("MMM dd yyyy HH:mm", Locale.ENGLISH);
 
     /**
      * Parses user input into a LocalDateTime, accepting multiple formats.

@@ -3,19 +3,16 @@ package bob.storage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
-import java.time.LocalDateTime;
-
 import bob.task.Task;
-import bob.tasktype.Todo;
 import bob.tasktype.Deadline;
 import bob.tasktype.Event;
+import bob.tasktype.Todo;
 import bob.util.DateTimeUtil;
 
 /**
@@ -94,7 +91,8 @@ public class Storage {
 
         if (task instanceof Deadline) {
             Deadline deadline = (Deadline) task;
-            return "D | " + isDone + " | " + deadline.getDescription() + " | " + deadline.getBy().format(DateTimeUtil.STORAGE_DATE_TIME);
+            String by = deadline.getBy().format(DateTimeUtil.STORAGE_DATE_TIME);
+            return "D | " + isDone + " | " + deadline.getDescription() + " | " + by;
         }
 
         if (task instanceof Event) {

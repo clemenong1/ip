@@ -1,21 +1,19 @@
 package bob;
 
 import java.io.IOException;
-
-import java.util.ArrayList;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 
+import bob.parser.Parser;
 import bob.storage.Storage;
 import bob.task.Task;
 import bob.task.TaskList;
-import bob.tasktype.Todo;
 import bob.tasktype.Deadline;
 import bob.tasktype.Event;
+import bob.tasktype.Todo;
 import bob.ui.Ui;
-import bob.parser.Parser;
 import bob.util.DateTimeUtil;
 
 /**
