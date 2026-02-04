@@ -1,6 +1,7 @@
 package bob.task;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Encapsulates a list of tasks and provides operations to manage them.
@@ -25,12 +26,32 @@ public class TaskList {
     }
 
     /**
+     * Creates a TaskList with the given tasks.
+     *
+     * @param initialTasks Tasks to initialize with.
+     */
+    public TaskList(Task... initialTasks) {
+        this.tasks = new ArrayList<>(Arrays.asList(initialTasks));
+    }
+
+    /**
      * Adds a task to the list.
      *
      * @param task Task to add.
      */
     public void add(Task task) {
         tasks.add(task);
+    }
+
+    /**
+     * Adds multiple tasks to the list.
+     *
+     * @param tasks Tasks to add.
+     */
+    public void add(Task... tasks) {
+        for (Task t : tasks) {
+            this.tasks.add(t);
+        }
     }
 
     /**
