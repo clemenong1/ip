@@ -63,6 +63,7 @@ public class Storage {
      * @throws IOException If there is an error writing to the file.
      */
     public void save(ArrayList<Task> tasks) throws IOException {
+        assert tasks != null : "tasks list must not be null";
         Path directory = filePath.getParent();
         if (directory != null) {
             Files.createDirectories(directory);
@@ -83,6 +84,7 @@ public class Storage {
      * @return Storage line representing the task.
      */
     private String formatTaskLine(Task task) {
+        assert task != null : "task must not be null";
         String isDone = (task.getStatus() == Task.Status.DONE) ? "1" : "0";
 
         if (task instanceof Todo) {
@@ -111,6 +113,7 @@ public class Storage {
      * @return Parsed task, or null if the line is invalid/corrupted.
      */
     private Task parseTaskLine(String line) {
+        assert line != null : "line must not be null";
         try {
             String[] parts = line.split("\\s*\\|\\s*");
             if (parts.length < 3) {

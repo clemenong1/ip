@@ -161,6 +161,7 @@ public class Bob {
 
                 String desc = deadlineArgs[0];
                 String byRaw = deadlineArgs[1];
+                assert deadlineArgs.length == 2 : "parseDeadlineArgs returns [desc, byRaw]";
 
                 try {
                     LocalDateTime by = DateTimeUtil.parseUserDateTime(byRaw);
@@ -200,6 +201,7 @@ public class Bob {
                 String desc = eventArgs[0];
                 String fromRaw = eventArgs[1];
                 String toRaw = eventArgs[2];
+                assert eventArgs.length == 3 : "parseEventArgs returns [desc, fromRaw, toRaw]";
 
                 try {
                     LocalDateTime from = DateTimeUtil.parseUserDateTime(fromRaw);
@@ -390,6 +392,7 @@ public class Bob {
 
             String desc = deadlineArgs[0];
             String byRaw = deadlineArgs[1];
+            assert deadlineArgs.length == 2 : "parseDeadlineArgs returns [desc, byRaw]";
 
             try {
                 LocalDateTime by = DateTimeUtil.parseUserDateTime(byRaw);
@@ -424,6 +427,7 @@ public class Bob {
             String desc = eventArgs[0];
             String fromRaw = eventArgs[1];
             String toRaw = eventArgs[2];
+            assert eventArgs.length == 3 : "parseEventArgs returns [desc, fromRaw, toRaw]";
 
             try {
                 LocalDateTime from = DateTimeUtil.parseUserDateTime(fromRaw);
@@ -498,6 +502,7 @@ public class Bob {
      * Formats the task list for display.
      */
     private String formatTaskList(ArrayList<Task> taskList) {
+        assert taskList != null : "taskList must not be null";
         StringBuilder sb = new StringBuilder("Here are the tasks in your list:\n");
         for (int i = 0; i < taskList.size(); i++) {
             sb.append((i + 1)).append(".").append(taskList.get(i)).append("\n");
@@ -509,6 +514,7 @@ public class Bob {
      * Formats matching tasks from a find search.
      */
     private String formatMatchingTasks(ArrayList<Task> matchingTasks) {
+        assert matchingTasks != null : "matchingTasks must not be null";
         StringBuilder sb = new StringBuilder("Here are the matching tasks in your list:\n");
         for (int i = 0; i < matchingTasks.size(); i++) {
             sb.append((i + 1)).append(".").append(matchingTasks.get(i)).append("\n");
@@ -520,6 +526,7 @@ public class Bob {
      * Formats tasks occurring on a specific date.
      */
     private String formatTasksOnDate(LocalDate date, ArrayList<Task> taskList) {
+        assert date != null && taskList != null : "date and taskList must not be null";
         StringBuilder sb = new StringBuilder("Here are the tasks occurring on ");
         sb.append(DateTimeUtil.formatDateForDisplay(date)).append(":\n");
 
