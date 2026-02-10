@@ -64,6 +64,7 @@ public class Bob {
                 break;
             }
 
+            showUrgentTasksIfAny();
             dispatchToUi(result);
         }
         ui.close();
@@ -83,7 +84,12 @@ public class Bob {
         if (result.getType() == CommandResult.ResultType.EXIT) {
             return "Bye. Hope to see you again soon!";
         }
-        return formatResult(result);
+        String response = formatResult(result);
+        String urgentPrefix = formatUrgentTasks();
+        if (!urgentPrefix.isEmpty()) {
+            response = urgentPrefix + "\n\n" + response;
+        }
+        return response;
     }
 
     /**
@@ -338,6 +344,28 @@ public class Bob {
             return header + "\nNo matching tasks.";
         }
         return formatNumberedList(header, taskList);
+    }
+
+    /**
+     * Returns formatted string of urgent tasks (deadlines within 3 days).
+     * Returns empty string if no urgent tasks.
+     */
+    private String formatUrgentTasks() {
+        ArrayList<Task> urgent = tasks.getUrgentTasks();
+        if (urgent.isEmpty()) {
+            return "";
+        }
+        return formatNumberedList("URGENT TASKS:", urgent);
+    }
+
+    /**
+     * Shows urgent tasks in the CLI if any exist.
+     */
+    private void showUrgentTasksIfAny() {
+        String urgent = formatUrgentTasks();
+        if (!urgent.isEmpty()) {
+            ui.showMessage(urgent);
+        }
     }
 
     /**
