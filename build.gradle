@@ -47,21 +47,19 @@ test {
 }
 
 application {
-    mainClass.set("bob.Bob")
+    mainClass.set("bob.gui.Launcher")
 }
 
-// Run the JavaFX GUI with: ./gradlew runGui
-task runGui(type: JavaExec) {
-    mainClass.set("bob.gui.Launcher")
+// Run the CLI (text-based) Bob: ./gradlew runCli
+task runCli(type: JavaExec) {
+    mainClass.set("bob.Bob")
     classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
 }
 
 shadowJar {
     archiveBaseName = "bob"
     archiveClassifier = null
-}
-
-run{
-    standardInput = System.in
+    mergeServiceFiles()
 }
 
