@@ -138,7 +138,7 @@ public class TaskList {
         LocalDateTime threeDaysLater = now.plusDays(3);
         ArrayList<Task> urgent = new ArrayList<>();
         for (Task t : tasks) {
-            if (t instanceof Deadline) {
+            if (t instanceof Deadline && t.getStatus() != Task.Status.DONE) {
                 Deadline d = (Deadline) t;
                 LocalDateTime by = d.getBy();
                 if (!by.isBefore(now) && by.isBefore(threeDaysLater)) {
