@@ -50,16 +50,25 @@ application {
     mainClass.set("bob.gui.Launcher")
 }
 
+run {
+    enableAssertions = true
+}
+
 // Run the CLI (text-based) Bob: ./gradlew runCli
 task runCli(type: JavaExec) {
     mainClass.set("bob.Bob")
     classpath = sourceSets.main.runtimeClasspath
     standardInput = System.in
+    enableAssertions = true
 }
 
 shadowJar {
     archiveBaseName = "bob"
     archiveClassifier = null
     mergeServiceFiles()
+}
+
+runShadow {
+    enableAssertions = true
 }
 

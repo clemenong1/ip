@@ -32,6 +32,7 @@ public class DateTimeUtil {
      * @throws DateTimeParseException If the input cannot be parsed in any supported format.
      */
     public static LocalDateTime parseUserDateTime(String raw) {
+        assert raw != null : "raw date/time string must not be null";
         String s = raw.trim();
 
         DateTimeFormatter[] dateTimeFormats = new DateTimeFormatter[] {
@@ -74,6 +75,7 @@ public class DateTimeUtil {
      * @return Formatted string for display.
      */
     public static String formatForDisplay(LocalDateTime dt) {
+        assert dt != null : "LocalDateTime must not be null";
         if (dt.toLocalTime().equals(LocalTime.MIDNIGHT)) {
             return dt.format(OUTPUT_DATE);
         }
@@ -87,6 +89,7 @@ public class DateTimeUtil {
      * @return Formatted string for display.
      */
     public static String formatDateForDisplay(LocalDate date) {
+        assert date != null : "LocalDate must not be null";
         return date.format(OUTPUT_DATE);
     }
 }

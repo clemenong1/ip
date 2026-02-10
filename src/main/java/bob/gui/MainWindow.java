@@ -50,6 +50,7 @@ public class MainWindow extends AnchorPane {
      */
     @FXML
     private void handleUserInput() {
+        assert bob != null : "Bob instance must be set via setBob() before handling input";
         String input = userInput.getText();
         String response = bob.getResponse(input);
 
