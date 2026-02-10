@@ -1,7 +1,12 @@
 package bob.task;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import bob.tasktype.Deadline;
+import bob.tasktype.Event;
 
 /**
  * Encapsulates a list of tasks and provides operations to manage them.
@@ -124,5 +129,41 @@ public class TaskList {
             }
         }
         return matching;
+    }
+
+    /**
+     * Returns tasks that occur on the given date.
+     * Includes deadlines due on that date and events overlapping that day.
+     *
+     * @param date The date to filter by.
+     * @return List of matching tasks.
+     */
+    public ArrayList<Task> getTasksOnDate(LocalDate date) {
+        assert date != null : "date must not be null";
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay().minusNanos(1);
+
+        ArrayList<Task> matching = new ArrayList<>();
+        for (Task t : tasks) {
+            if (isTaskOnDate(t, date, startOfDay, endOfDay)) {
+                matching.add(t);
+            }
+        }
+        return matching;
+    }
+
+    private boolean isTaskOnDate(Task task, LocalDate date,
+            LocalDateTime startOfDay, LocalDateTime endOfDay) {
+        if (task instanceof Deadline) {
+            Deadline d = (Deadline) task;
+            return d.getBy().toLocalDate().equals(date);
+        }
+        if (task instanceof Event) {
+            Event e = (Event) task;
+            boolean endsOnOrAfterStart = !e.getTo().isBefore(startOfDay);
+            boolean startsOnOrBeforeEnd = !e.getFrom().isAfter(endOfDay);
+            return endsOnOrAfterStart && startsOnOrBeforeEnd;
+        }
+        return false;
     }
 }

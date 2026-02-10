@@ -19,6 +19,13 @@ import bob.util.DateTimeUtil;
  * Handles loading tasks from file and saving tasks to file.
  */
 public class Storage {
+    /** Minimum parts for any task (type, isDone, description). */
+    private static final int MIN_PARTS_ANY = 3;
+    /** Minimum parts for deadline (adds by time). */
+    private static final int MIN_PARTS_DEADLINE = 4;
+    /** Minimum parts for event (adds from and to times). */
+    private static final int MIN_PARTS_EVENT = 5;
+
     private final Path filePath;
 
     /**
@@ -116,7 +123,7 @@ public class Storage {
         assert line != null : "line must not be null";
         try {
             String[] parts = line.split("\\s*\\|\\s*");
-            if (parts.length < 3) {
+            if (parts.length < MIN_PARTS_ANY) {
                 return null;
             }
 
@@ -128,13 +135,13 @@ public class Storage {
             if ("T".equals(type)) {
                 task = new Todo(description);
             } else if ("D".equals(type)) {
-                if (parts.length < 4) {
+                if (parts.length < MIN_PARTS_DEADLINE) {
                     return null;
                 }
                 LocalDateTime by = LocalDateTime.parse(parts[3], DateTimeUtil.STORAGE_DATE_TIME);
                 task = new Deadline(description, by);
             } else if ("E".equals(type)) {
-                if (parts.length < 5) {
+                if (parts.length < MIN_PARTS_EVENT) {
                     return null;
                 }
                 LocalDateTime from = LocalDateTime.parse(parts[3], DateTimeUtil.STORAGE_DATE_TIME);
