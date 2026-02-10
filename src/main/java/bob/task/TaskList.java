@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import bob.tasktype.Deadline;
 import bob.tasktype.Event;
@@ -121,14 +122,10 @@ public class TaskList {
      */
     public ArrayList<Task> findTasksByKeyword(String keyword) {
         assert keyword != null : "keyword must not be null";
-        ArrayList<Task> matching = new ArrayList<>();
         String lowerKeyword = keyword.toLowerCase();
-        for (Task t : tasks) {
-            if (t.getDescription().toLowerCase().contains(lowerKeyword)) {
-                matching.add(t);
-            }
-        }
-        return matching;
+        return new ArrayList<>(tasks.stream()
+                .filter(t -> t.getDescription().toLowerCase().contains(lowerKeyword))
+                .collect(Collectors.toList()));
     }
 
     /**
