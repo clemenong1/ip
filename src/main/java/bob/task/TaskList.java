@@ -129,6 +129,27 @@ public class TaskList {
     }
 
     /**
+     * Returns tasks with deadlines due within the next 3 days.
+     *
+     * @return List of urgent deadline tasks.
+     */
+    public ArrayList<Task> getUrgentTasks() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime threeDaysLater = now.plusDays(3);
+        ArrayList<Task> urgent = new ArrayList<>();
+        for (Task t : tasks) {
+            if (t instanceof Deadline) {
+                Deadline d = (Deadline) t;
+                LocalDateTime by = d.getBy();
+                if (!by.isBefore(now) && by.isBefore(threeDaysLater)) {
+                    urgent.add(t);
+                }
+            }
+        }
+        return urgent;
+    }
+
+    /**
      * Returns tasks that occur on the given date.
      * Includes deadlines due on that date and events overlapping that day.
      *
