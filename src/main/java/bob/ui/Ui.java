@@ -47,14 +47,23 @@ public class Ui {
     }
 
     /**
+     * Shows a message to the user.
+     *
+     * @param message Message to display.
+     */
+    public void showMessage(String message) {
+        showLine();
+        System.out.println(message);
+        showLine();
+    }
+
+    /**
      * Shows an error message.
      *
      * @param message Error message to display.
      */
     public void showError(String message) {
-        showLine();
-        System.out.println(message);
-        showLine();
+        showMessage(message);
     }
 
     /**

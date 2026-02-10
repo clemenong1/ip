@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
+import bob.command.CommandResult;
 import bob.parser.Parser;
 import bob.storage.Storage;
 import bob.task.Task;
@@ -20,6 +21,14 @@ import bob.util.DateTimeUtil;
  * Runs the Bob chatbot application that manages a list of tasks.
  */
 public class Bob {
+    private static final String ERROR_TASK_NOT_FOUND = "WRONG!!! That task number does not exist.";
+    private static final String ERROR_DELETE_SPECIFY = "WRONG!!! Please specify a task number to delete.";
+    private static final String ERROR_TODO_DESC = "WRONG!!! Add a description for your todo.";
+    private static final String ERROR_DEADLINE_DESC = "WRONG!!! Add a description for your deadline task.";
+    private static final String ERROR_EVENT_DESC = "WRONG!!! Add a description for your event.";
+    private static final String ERROR_FIND_KEYWORD = "WRONG!!! Please specify a keyword to search for.";
+    private static final String ERROR_EVENT_END_AFTER_START = "WRONG!!! Event end time must be after start time.";
+
     private Storage storage;
     private TaskList tasks;
     private Ui ui;
@@ -44,242 +53,18 @@ public class Bob {
      * Runs the Bob chatbot application.
      */
     public void run() {
-        // Greeting
         ui.showWelcome();
 
         while (true) {
             String input = ui.readCommand();
+            CommandResult result = processCommand(input);
 
-            // Exit
-            if (input.equalsIgnoreCase("bye")) {
+            if (result.getType() == CommandResult.ResultType.EXIT) {
                 ui.showGoodbye();
                 break;
             }
 
-            // LIST
-            if (input.equals("list")) {
-                ui.showTaskList(tasks.getAllTasks());
-                continue;
-            }
-
-            // MARK
-            if (input.startsWith("mark ")) {
-                int idx = Parser.parseIndex(input, "mark ");
-                if (tasks.isValidIndex(idx)) {
-                    Task t = tasks.get(idx);
-                    t.setStatus(Task.Status.DONE);
-                    try {
-                        storage.save(tasks.getAllTasks());
-                    } catch (IOException e) {
-                        ui.showError("Could not save tasks: " + e.getMessage());
-                    }
-                    ui.showMarkedTask(t);
-                } else {
-                    ui.showError("WRONG!!! That task number does not exist.");
-                }
-                continue;
-            }
-
-            // UNMARK
-            if (input.startsWith("unmark ")) {
-                int idx = Parser.parseIndex(input, "unmark ");
-                if (tasks.isValidIndex(idx)) {
-                    Task t = tasks.get(idx);
-                    t.setStatus(Task.Status.NOT_DONE);
-                    try {
-                        storage.save(tasks.getAllTasks());
-                    } catch (IOException e) {
-                        ui.showError("Could not save tasks: " + e.getMessage());
-                    }
-                    ui.showUnmarkedTask(t);
-                } else {
-                    ui.showError("WRONG!!! That task number does not exist.");
-                }
-                continue;
-            }
-
-            // DELETE
-            if (input.equals("delete")) {
-                ui.showError("WRONG!!! Please specify a task number to delete.");
-                continue;
-            }
-
-            if (input.startsWith("delete ")) {
-                int idx = Parser.parseIndex(input, "delete ");
-                if (tasks.isValidIndex(idx)) {
-                    Task removed = tasks.remove(idx);
-                    try {
-                        storage.save(tasks.getAllTasks());
-                    } catch (IOException e) {
-                        ui.showError("Could not save tasks: " + e.getMessage());
-                    }
-                    ui.showDeletedTask(removed, tasks.size());
-                } else {
-                    ui.showError("WRONG!!! That task number does not exist.");
-                }
-                continue;
-            }
-
-            // TODO (handles empty todo)
-            if (input.equals("todo")) {
-                ui.showError("WRONG!!! Add a description for your todo.");
-                continue;
-            }
-
-            if (input.startsWith("todo ")) {
-                String desc = Parser.parseTodoDescription(input);
-                if (desc.isEmpty()) {
-                    ui.showError("WRONG!!! Add a description for your todo.");
-                    continue;
-                }
-
-                Task t = new Todo(desc);
-                tasks.add(t);
-                try {
-                    storage.save(tasks.getAllTasks());
-                } catch (IOException e) {
-                    ui.showError("Could not save tasks: " + e.getMessage());
-                }
-                ui.showAddedTask(t, tasks.size());
-                continue;
-            }
-
-            // DEADLINE (handles missing /by)
-            if (input.equals("deadline")) {
-                ui.showError("WRONG!!! Add a description for your deadline task.");
-                continue;
-            }
-
-            if (input.startsWith("deadline ")) {
-                String[] deadlineArgs;
-                try {
-                    deadlineArgs = Parser.parseDeadlineArgs(input);
-                } catch (IllegalArgumentException e) {
-                    ui.showError("WRONG!!! " + e.getMessage());
-                    continue;
-                }
-
-                String desc = deadlineArgs[0];
-                String byRaw = deadlineArgs[1];
-                assert deadlineArgs.length == 2 : "parseDeadlineArgs returns [desc, byRaw]";
-
-                try {
-                    LocalDateTime by = DateTimeUtil.parseUserDateTime(byRaw);
-                    Task t = new Deadline(desc, by);
-                    tasks.add(t);
-                    try {
-                        storage.save(tasks.getAllTasks());
-                    } catch (IOException e) {
-                        ui.showError("Could not save tasks: " + e.getMessage());
-                    }
-                    ui.showAddedTask(t, tasks.size());
-                } catch (DateTimeParseException e) {
-                    ui.showError("WRONG!!! Invalid date/time.\n"
-                            + "Use formats like:\n"
-                            + "  2019-10-15\n"
-                            + "  2019-10-15 1800\n"
-                            + "  2/12/2019 1800");
-                }
-                continue;
-            }
-
-            // EVENT (handles missing /from or /to)
-            if (input.equals("event")) {
-                ui.showError("WRONG!!! Add a description for your event.");
-                continue;
-            }
-
-            if (input.startsWith("event ")) {
-                String[] eventArgs;
-                try {
-                    eventArgs = Parser.parseEventArgs(input);
-                } catch (IllegalArgumentException e) {
-                    ui.showError("WRONG!!! " + e.getMessage());
-                    continue;
-                }
-
-                String desc = eventArgs[0];
-                String fromRaw = eventArgs[1];
-                String toRaw = eventArgs[2];
-                assert eventArgs.length == 3 : "parseEventArgs returns [desc, fromRaw, toRaw]";
-
-                try {
-                    LocalDateTime from = DateTimeUtil.parseUserDateTime(fromRaw);
-                    LocalDateTime to = DateTimeUtil.parseUserDateTime(toRaw);
-
-                    if (to.isBefore(from)) {
-                        ui.showError("WRONG!!! Event end time must be after start time.");
-                        continue;
-                    }
-
-                    Task t = new Event(desc, from, to);
-                    tasks.add(t);
-                    try {
-                        storage.save(tasks.getAllTasks());
-                    } catch (IOException e) {
-                        ui.showError("Could not save tasks: " + e.getMessage());
-                    }
-                    ui.showAddedTask(t, tasks.size());
-                } catch (DateTimeParseException e) {
-                    ui.showError("WRONG!!! Invalid date/time.\n"
-                            + "Use formats like:\n"
-                            + "  2019-10-15\n"
-                            + "  2019-10-15 1800\n"
-                            + "  2/12/2019 1800");
-                }
-                continue;
-            }
-
-            // FIND (search tasks by keyword in description)
-            if (input.equals("find")) {
-                ui.showError("WRONG!!! Please specify a keyword to search for.");
-                continue;
-            }
-
-            if (input.startsWith("find ")) {
-                String keyword = Parser.parseFindKeyword(input);
-                ArrayList<Task> matchingTasks = tasks.findTasksByKeyword(keyword);
-                ui.showMatchingTasks(matchingTasks);
-                continue;
-            }
-
-            // ON (lists deadlines/events on a specific date)
-            if (input.startsWith("on ")) {
-                LocalDate date;
-                try {
-                    date = Parser.parseOnDate(input);
-
-                    LocalDateTime start = date.atStartOfDay();
-                    LocalDateTime end = date.plusDays(1).atStartOfDay().minusNanos(1);
-
-                    ArrayList<Task> matchingTasks = new ArrayList<>();
-                    for (int i = 0; i < tasks.size(); i++) {
-                        Task t = tasks.get(i);
-
-                        boolean matches = false;
-
-                        if (t instanceof Deadline) {
-                            Deadline d = (Deadline) t;
-                            matches = d.getBy().toLocalDate().equals(date);
-                        } else if (t instanceof Event) {
-                            Event e = (Event) t;
-                            // overlaps the day
-                            matches = !e.getTo().isBefore(start) && !e.getFrom().isAfter(end);
-                        }
-
-                        if (matches) {
-                            matchingTasks.add(t);
-                        }
-                    }
-
-                    ui.showTasksOnDate(date, matchingTasks);
-                } catch (DateTimeParseException e) {
-                    ui.showError("WRONG!!! Invalid date.\nUse: on yyyy-mm-dd (e.g., on 2019-12-02)");
-                }
-                continue;
-            }
-            // Unknown command
-            ui.showError("WRONG!!! I'm sorry, but I don't know what that means :-(");
+            dispatchToUi(result);
         }
         ui.close();
     }
@@ -293,251 +78,266 @@ public class Bob {
      */
     public String getResponse(String input) {
         input = input.trim();
+        CommandResult result = processCommand(input);
 
-        // Handle "bye" command
-        if (input.equalsIgnoreCase("bye")) {
+        if (result.getType() == CommandResult.ResultType.EXIT) {
             return "Bye. Hope to see you again soon!";
         }
-
-        // LIST
-        if (input.equals("list")) {
-            return formatTaskList(tasks.getAllTasks());
-        }
-
-        // MARK
-        if (input.startsWith("mark ")) {
-            int idx = Parser.parseIndex(input, "mark ");
-            if (tasks.isValidIndex(idx)) {
-                Task t = tasks.get(idx);
-                t.setStatus(Task.Status.DONE);
-                try {
-                    storage.save(tasks.getAllTasks());
-                } catch (IOException e) {
-                    return "Could not save tasks: " + e.getMessage();
-                }
-                return "Nice! I've marked this task as done:\n  " + t;
-            }
-            return "WRONG!!! That task number does not exist.";
-        }
-
-        // UNMARK
-        if (input.startsWith("unmark ")) {
-            int idx = Parser.parseIndex(input, "unmark ");
-            if (tasks.isValidIndex(idx)) {
-                Task t = tasks.get(idx);
-                t.setStatus(Task.Status.NOT_DONE);
-                try {
-                    storage.save(tasks.getAllTasks());
-                } catch (IOException e) {
-                    return "Could not save tasks: " + e.getMessage();
-                }
-                return "OK, I've marked this task as not done yet:\n  " + t;
-            }
-            return "WRONG!!! That task number does not exist.";
-        }
-
-        // DELETE
-        if (input.equals("delete")) {
-            return "WRONG!!! Please specify a task number to delete.";
-        }
-
-        if (input.startsWith("delete ")) {
-            int idx = Parser.parseIndex(input, "delete ");
-            if (tasks.isValidIndex(idx)) {
-                Task removed = tasks.remove(idx);
-                try {
-                    storage.save(tasks.getAllTasks());
-                } catch (IOException e) {
-                    return "Could not save tasks: " + e.getMessage();
-                }
-                return "Noted. I've removed this task:\n  " + removed + "\nNow you have "
-                        + tasks.size() + " tasks in the list.";
-            }
-            return "WRONG!!! That task number does not exist.";
-        }
-
-        // TODO
-        if (input.equals("todo")) {
-            return "WRONG!!! Add a description for your todo.";
-        }
-
-        if (input.startsWith("todo ")) {
-            String desc = Parser.parseTodoDescription(input);
-            if (desc.isEmpty()) {
-                return "WRONG!!! Add a description for your todo.";
-            }
-            Task t = new Todo(desc);
-            tasks.add(t);
-            try {
-                storage.save(tasks.getAllTasks());
-            } catch (IOException e) {
-                return "Could not save tasks: " + e.getMessage();
-            }
-            return "Got it. I've added this task:\n  " + t + "\nNow you have "
-                    + tasks.size() + " tasks in the list.";
-        }
-
-        // DEADLINE
-        if (input.equals("deadline")) {
-            return "WRONG!!! Add a description for your deadline task.";
-        }
-
-        if (input.startsWith("deadline ")) {
-            String[] deadlineArgs;
-            try {
-                deadlineArgs = Parser.parseDeadlineArgs(input);
-            } catch (IllegalArgumentException e) {
-                return "WRONG!!! " + e.getMessage();
-            }
-
-            String desc = deadlineArgs[0];
-            String byRaw = deadlineArgs[1];
-            assert deadlineArgs.length == 2 : "parseDeadlineArgs returns [desc, byRaw]";
-
-            try {
-                LocalDateTime by = DateTimeUtil.parseUserDateTime(byRaw);
-                Task t = new Deadline(desc, by);
-                tasks.add(t);
-                try {
-                    storage.save(tasks.getAllTasks());
-                } catch (IOException e) {
-                    return "Could not save tasks: " + e.getMessage();
-                }
-                return "Got it. I've added this task:\n  " + t + "\nNow you have "
-                        + tasks.size() + " tasks in the list.";
-            } catch (DateTimeParseException e) {
-                return "WRONG!!! Invalid date/time.\nUse formats like:\n  2019-10-15\n  "
-                        + "2019-10-15 1800\n  2/12/2019 1800";
-            }
-        }
-
-        // EVENT
-        if (input.equals("event")) {
-            return "WRONG!!! Add a description for your event.";
-        }
-
-        if (input.startsWith("event ")) {
-            String[] eventArgs;
-            try {
-                eventArgs = Parser.parseEventArgs(input);
-            } catch (IllegalArgumentException e) {
-                return "WRONG!!! " + e.getMessage();
-            }
-
-            String desc = eventArgs[0];
-            String fromRaw = eventArgs[1];
-            String toRaw = eventArgs[2];
-            assert eventArgs.length == 3 : "parseEventArgs returns [desc, fromRaw, toRaw]";
-
-            try {
-                LocalDateTime from = DateTimeUtil.parseUserDateTime(fromRaw);
-                LocalDateTime to = DateTimeUtil.parseUserDateTime(toRaw);
-
-                if (to.isBefore(from)) {
-                    return "WRONG!!! Event end time must be after start time.";
-                }
-
-                Task t = new Event(desc, from, to);
-                tasks.add(t);
-                try {
-                    storage.save(tasks.getAllTasks());
-                } catch (IOException e) {
-                    return "Could not save tasks: " + e.getMessage();
-                }
-                return "Got it. I've added this task:\n  " + t + "\nNow you have "
-                        + tasks.size() + " tasks in the list.";
-            } catch (DateTimeParseException e) {
-                return "WRONG!!! Invalid date/time.\nUse formats like:\n  2019-10-15\n  "
-                        + "2019-10-15 1800\n  2/12/2019 1800";
-            }
-        }
-
-        // FIND
-        if (input.equals("find")) {
-            return "WRONG!!! Please specify a keyword to search for.";
-        }
-
-        if (input.startsWith("find ")) {
-            String keyword = Parser.parseFindKeyword(input);
-            ArrayList<Task> matchingTasks = tasks.findTasksByKeyword(keyword);
-            return formatMatchingTasks(matchingTasks);
-        }
-
-        // ON (lists deadlines/events on a specific date)
-        if (input.startsWith("on ")) {
-            try {
-                LocalDate date = Parser.parseOnDate(input);
-                LocalDateTime start = date.atStartOfDay();
-                LocalDateTime end = date.plusDays(1).atStartOfDay().minusNanos(1);
-
-                ArrayList<Task> matchingTasks = new ArrayList<>();
-                for (int i = 0; i < tasks.size(); i++) {
-                    Task t = tasks.get(i);
-                    boolean matches = false;
-
-                    if (t instanceof Deadline) {
-                        Deadline d = (Deadline) t;
-                        matches = d.getBy().toLocalDate().equals(date);
-                    } else if (t instanceof Event) {
-                        Event e = (Event) t;
-                        matches = !e.getTo().isBefore(start) && !e.getFrom().isAfter(end);
-                    }
-
-                    if (matches) {
-                        matchingTasks.add(t);
-                    }
-                }
-
-                return formatTasksOnDate(date, matchingTasks);
-            } catch (DateTimeParseException e) {
-                return "WRONG!!! Invalid date.\nUse: on yyyy-mm-dd (e.g., on 2019-12-02)";
-            }
-        }
-
-        // Unknown command
-        return "WRONG!!! I'm sorry, but I don't know what that means :-(";
+        return formatResult(result);
     }
 
     /**
-     * Formats the task list for display.
+     * Processes the user input and returns a CommandResult.
      */
+    private CommandResult processCommand(String input) {
+        if (input.equalsIgnoreCase("bye")) {
+            return CommandResult.EXIT;
+        }
+        if (input.equals("list")) {
+            return CommandResult.list(tasks.getAllTasks());
+        }
+        if (input.startsWith(Parser.PREFIX_MARK)) {
+            return handleMark(input);
+        }
+        if (input.startsWith(Parser.PREFIX_UNMARK)) {
+            return handleUnmark(input);
+        }
+        if (input.equals("delete")) {
+            return CommandResult.error(ERROR_DELETE_SPECIFY);
+        }
+        if (input.startsWith(Parser.PREFIX_DELETE)) {
+            return handleDelete(input);
+        }
+        if (input.equals("todo")) {
+            return CommandResult.error(ERROR_TODO_DESC);
+        }
+        if (input.startsWith(Parser.PREFIX_TODO)) {
+            return handleTodo(input);
+        }
+        if (input.equals("deadline")) {
+            return CommandResult.error(ERROR_DEADLINE_DESC);
+        }
+        if (input.startsWith(Parser.PREFIX_DEADLINE)) {
+            return handleDeadline(input);
+        }
+        if (input.equals("event")) {
+            return CommandResult.error(ERROR_EVENT_DESC);
+        }
+        if (input.startsWith(Parser.PREFIX_EVENT)) {
+            return handleEvent(input);
+        }
+        if (input.equals("find")) {
+            return CommandResult.error(ERROR_FIND_KEYWORD);
+        }
+        if (input.startsWith(Parser.PREFIX_FIND)) {
+            return handleFind(input);
+        }
+        if (input.startsWith(Parser.PREFIX_ON)) {
+            return handleOn(input);
+        }
+        return CommandResult.error(CommandResult.UNKNOWN_COMMAND_ERROR);
+    }
+
+    private void dispatchToUi(CommandResult result) {
+        switch (result.getType()) {
+        case LIST:
+            ui.showTaskList(result.getTaskList());
+            break;
+        case MATCHING_TASKS:
+            ui.showMatchingTasks(result.getTaskList());
+            break;
+        case TASKS_ON_DATE:
+            ui.showTasksOnDate(result.getDate(), result.getTaskList());
+            break;
+        case MESSAGE:
+            ui.showMessage(result.getMessage());
+            break;
+        case ERROR:
+            ui.showError(result.getMessage());
+            break;
+        default:
+            break;
+        }
+    }
+
+    private String formatResult(CommandResult result) {
+        switch (result.getType()) {
+        case LIST:
+            return formatTaskList(result.getTaskList());
+        case MATCHING_TASKS:
+            return formatMatchingTasks(result.getTaskList());
+        case TASKS_ON_DATE:
+            return formatTasksOnDate(result.getDate(), result.getTaskList());
+        case MESSAGE:
+        case ERROR:
+            return result.getMessage();
+        default:
+            return "";
+        }
+    }
+
+    private CommandResult handleMark(String input) {
+        int idx = Parser.parseIndex(input, Parser.PREFIX_MARK);
+        if (!tasks.isValidIndex(idx)) {
+            return CommandResult.error(ERROR_TASK_NOT_FOUND);
+        }
+        Task task = tasks.get(idx);
+        task.setStatus(Task.Status.DONE);
+        String saveError = saveTasks();
+        if (saveError != null) {
+            return CommandResult.error(saveError);
+        }
+        return CommandResult.message("Nice! I've marked this task as done:\n  " + task);
+    }
+
+    private CommandResult handleUnmark(String input) {
+        int idx = Parser.parseIndex(input, Parser.PREFIX_UNMARK);
+        if (!tasks.isValidIndex(idx)) {
+            return CommandResult.error(ERROR_TASK_NOT_FOUND);
+        }
+        Task task = tasks.get(idx);
+        task.setStatus(Task.Status.NOT_DONE);
+        String saveError = saveTasks();
+        if (saveError != null) {
+            return CommandResult.error(saveError);
+        }
+        return CommandResult.message("OK, I've marked this task as not done yet:\n  " + task);
+    }
+
+    private CommandResult handleDelete(String input) {
+        int idx = Parser.parseIndex(input, Parser.PREFIX_DELETE);
+        if (!tasks.isValidIndex(idx)) {
+            return CommandResult.error(ERROR_TASK_NOT_FOUND);
+        }
+        Task removed = tasks.remove(idx);
+        String saveError = saveTasks();
+        if (saveError != null) {
+            return CommandResult.error(saveError);
+        }
+        return CommandResult.message("Noted. I've removed this task:\n  " + removed
+                + "\nNow you have " + tasks.size() + " tasks in the list.");
+    }
+
+    private CommandResult handleTodo(String input) {
+        String desc = Parser.parseTodoDescription(input);
+        if (desc.isEmpty()) {
+            return CommandResult.error(ERROR_TODO_DESC);
+        }
+        Task task = new Todo(desc);
+        tasks.add(task);
+        String saveError = saveTasks();
+        if (saveError != null) {
+            return CommandResult.error(saveError);
+        }
+        return CommandResult.message("Got it. I've added this task:\n  " + task
+                + "\nNow you have " + tasks.size() + " tasks in the list.");
+    }
+
+    private CommandResult handleDeadline(String input) {
+        String[] args;
+        try {
+            args = Parser.parseDeadlineArgs(input);
+        } catch (IllegalArgumentException e) {
+            return CommandResult.error("WRONG!!! " + e.getMessage());
+        }
+
+        try {
+            LocalDateTime by = DateTimeUtil.parseUserDateTime(args[1]);
+            Task task = new Deadline(args[0], by);
+            tasks.add(task);
+            String saveError = saveTasks();
+            if (saveError != null) {
+                return CommandResult.error(saveError);
+            }
+            return CommandResult.message("Got it. I've added this task:\n  " + task
+                    + "\nNow you have " + tasks.size() + " tasks in the list.");
+        } catch (DateTimeParseException e) {
+            return CommandResult.error(CommandResult.DATE_TIME_FORMAT_HINT);
+        }
+    }
+
+    private CommandResult handleEvent(String input) {
+        String[] args;
+        try {
+            args = Parser.parseEventArgs(input);
+        } catch (IllegalArgumentException e) {
+            return CommandResult.error("WRONG!!! " + e.getMessage());
+        }
+
+        try {
+            LocalDateTime from = DateTimeUtil.parseUserDateTime(args[1]);
+            LocalDateTime to = DateTimeUtil.parseUserDateTime(args[2]);
+            if (to.isBefore(from)) {
+                return CommandResult.error(ERROR_EVENT_END_AFTER_START);
+            }
+            Task task = new Event(args[0], from, to);
+            tasks.add(task);
+            String saveError = saveTasks();
+            if (saveError != null) {
+                return CommandResult.error(saveError);
+            }
+            return CommandResult.message("Got it. I've added this task:\n  " + task
+                    + "\nNow you have " + tasks.size() + " tasks in the list.");
+        } catch (DateTimeParseException e) {
+            return CommandResult.error(CommandResult.DATE_TIME_FORMAT_HINT);
+        }
+    }
+
+    private CommandResult handleFind(String input) {
+        String keyword = Parser.parseFindKeyword(input);
+        ArrayList<Task> matching = tasks.findTasksByKeyword(keyword);
+        return CommandResult.matchingTasks(matching);
+    }
+
+    private CommandResult handleOn(String input) {
+        try {
+            LocalDate date = Parser.parseOnDate(input);
+            ArrayList<Task> matching = tasks.getTasksOnDate(date);
+            return CommandResult.tasksOnDate(date, matching);
+        } catch (DateTimeParseException e) {
+            return CommandResult.error(CommandResult.DATE_FORMAT_HINT);
+        }
+    }
+
+    /**
+     * Saves tasks to storage.
+     * @return Error message if save fails, null on success.
+     */
+    private String saveTasks() {
+        try {
+            storage.save(tasks.getAllTasks());
+            return null;
+        } catch (IOException e) {
+            return "Could not save tasks: " + e.getMessage();
+        }
+    }
+
     private String formatTaskList(ArrayList<Task> taskList) {
         assert taskList != null : "taskList must not be null";
-        StringBuilder sb = new StringBuilder("Here are the tasks in your list:\n");
-        for (int i = 0; i < taskList.size(); i++) {
-            sb.append((i + 1)).append(".").append(taskList.get(i)).append("\n");
-        }
-        return sb.toString().trim();
+        return formatNumberedList("Here are the tasks in your list:", taskList);
     }
 
-    /**
-     * Formats matching tasks from a find search.
-     */
     private String formatMatchingTasks(ArrayList<Task> matchingTasks) {
         assert matchingTasks != null : "matchingTasks must not be null";
-        StringBuilder sb = new StringBuilder("Here are the matching tasks in your list:\n");
-        for (int i = 0; i < matchingTasks.size(); i++) {
-            sb.append((i + 1)).append(".").append(matchingTasks.get(i)).append("\n");
+        return formatNumberedList("Here are the matching tasks in your list:", matchingTasks);
+    }
+
+    private String formatNumberedList(String header, ArrayList<Task> taskList) {
+        StringBuilder sb = new StringBuilder(header).append("\n");
+        for (int i = 0; i < taskList.size(); i++) {
+            sb.append(i + 1).append(".").append(taskList.get(i)).append("\n");
         }
         return sb.toString().trim();
     }
 
-    /**
-     * Formats tasks occurring on a specific date.
-     */
     private String formatTasksOnDate(LocalDate date, ArrayList<Task> taskList) {
         assert date != null && taskList != null : "date and taskList must not be null";
-        StringBuilder sb = new StringBuilder("Here are the tasks occurring on ");
-        sb.append(DateTimeUtil.formatDateForDisplay(date)).append(":\n");
-
+        String header = "Here are the tasks occurring on "
+                + DateTimeUtil.formatDateForDisplay(date) + ":";
         if (taskList.isEmpty()) {
-            sb.append("No matching tasks.");
-        } else {
-            for (int i = 0; i < taskList.size(); i++) {
-                sb.append((i + 1)).append(".").append(taskList.get(i)).append("\n");
-            }
+            return header + "\nNo matching tasks.";
         }
-        return sb.toString().trim();
+        return formatNumberedList(header, taskList);
     }
 
     /**

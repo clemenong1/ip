@@ -8,6 +8,29 @@ import java.time.format.DateTimeParseException;
  * Parses user commands and extracts relevant information from them.
  */
 public class Parser {
+    /** Command prefix for mark command. */
+    public static final String PREFIX_MARK = "mark ";
+    /** Command prefix for unmark command. */
+    public static final String PREFIX_UNMARK = "unmark ";
+    /** Command prefix for delete command. */
+    public static final String PREFIX_DELETE = "delete ";
+    /** Command prefix for todo command. */
+    public static final String PREFIX_TODO = "todo ";
+    /** Command prefix for deadline command. */
+    public static final String PREFIX_DEADLINE = "deadline ";
+    /** Command prefix for event command. */
+    public static final String PREFIX_EVENT = "event ";
+    /** Command prefix for find command. */
+    public static final String PREFIX_FIND = "find ";
+    /** Command prefix for on command. */
+    public static final String PREFIX_ON = "on ";
+
+    /** Length of "/by" substring for deadline parsing. */
+    private static final int BY_PREFIX_LENGTH = 3;
+    /** Length of "/from" substring for event parsing. */
+    private static final int FROM_PREFIX_LENGTH = 5;
+    /** Length of "/to" substring for event parsing. */
+    private static final int TO_PREFIX_LENGTH = 3;
     /**
      * Parses a 0-based index from a command string that contains a 1-based task number.
      *
@@ -34,9 +57,9 @@ public class Parser {
      * @return Description extracted from the command.
      */
     public static String parseTodoDescription(String input) {
-        assert input != null && input.startsWith("todo ")
+        assert input != null && input.startsWith(PREFIX_TODO)
                 : "input must start with 'todo '";
-        return input.substring("todo ".length()).trim();
+        return input.substring(PREFIX_TODO.length()).trim();
     }
 
     /**
@@ -47,9 +70,9 @@ public class Parser {
      * @throws IllegalArgumentException If the command format is invalid.
      */
     public static String[] parseDeadlineArgs(String input) throws IllegalArgumentException {
-        assert input != null && input.startsWith("deadline ")
+        assert input != null && input.startsWith(PREFIX_DEADLINE)
                 : "input must start with 'deadline '";
-        String rest = input.substring("deadline ".length()).trim();
+        String rest = input.substring(PREFIX_DEADLINE.length()).trim();
         int byPos = rest.indexOf("/by");
 
         if (byPos == -1) {
@@ -57,7 +80,7 @@ public class Parser {
         }
 
         String desc = rest.substring(0, byPos).trim();
-        String byRaw = rest.substring(byPos + 3).trim();
+        String byRaw = rest.substring(byPos + BY_PREFIX_LENGTH).trim();
 
         if (desc.isEmpty()) {
             throw new IllegalArgumentException("Add a description for your deadline task.");
@@ -81,9 +104,9 @@ public class Parser {
      * @throws IllegalArgumentException If the command format is invalid.
      */
     public static String[] parseEventArgs(String input) throws IllegalArgumentException {
-        assert input != null && input.startsWith("event ")
+        assert input != null && input.startsWith(PREFIX_EVENT)
                 : "input must start with 'event '";
-        String rest = input.substring("event ".length()).trim();
+        String rest = input.substring(PREFIX_EVENT.length()).trim();
 
         int fromPos = rest.indexOf("/from");
         int toPos = rest.indexOf("/to");
@@ -93,8 +116,8 @@ public class Parser {
         }
 
         String desc = rest.substring(0, fromPos).trim();
-        String fromRaw = rest.substring(fromPos + 5, toPos).trim();
-        String toRaw = rest.substring(toPos + 3).trim();
+        String fromRaw = rest.substring(fromPos + FROM_PREFIX_LENGTH, toPos).trim();
+        String toRaw = rest.substring(toPos + TO_PREFIX_LENGTH).trim();
 
         if (desc.isEmpty()) {
             throw new IllegalArgumentException("Add a description for your event.");
@@ -116,9 +139,9 @@ public class Parser {
      * @return The trimmed keyword to search for.
      */
     public static String parseFindKeyword(String input) {
-        assert input != null && input.startsWith("find ")
+        assert input != null && input.startsWith(PREFIX_FIND)
                 : "input must start with 'find '";
-        return input.substring("find ".length()).trim();
+        return input.substring(PREFIX_FIND.length()).trim();
     }
 
     /**
@@ -129,9 +152,9 @@ public class Parser {
      * @throws DateTimeParseException If the date format is invalid.
      */
     public static LocalDate parseOnDate(String input) throws DateTimeParseException {
-        assert input != null && input.startsWith("on ")
+        assert input != null && input.startsWith(PREFIX_ON)
                 : "input must start with 'on '";
-        String dateRaw = input.substring("on ".length()).trim();
+        String dateRaw = input.substring(PREFIX_ON.length()).trim();
         return LocalDate.parse(dateRaw, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
 }
