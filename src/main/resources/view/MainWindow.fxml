@@ -11,14 +11,14 @@
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="bob.gui.MainWindow">
     <children>
         <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-            <ScrollPane fx:id="scrollPane" fitToWidth="true" hbarPolicy="NEVER" VBox.vgrow="ALWAYS">
+            <ScrollPane fx:id="scrollPane" fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: #FFF9E6;" VBox.vgrow="ALWAYS">
                 <content>
-                    <VBox fx:id="dialogContainer" fillWidth="true" />
+                    <VBox fx:id="dialogContainer" fillWidth="true" style="-fx-background-color: #FFF9E6;" />
                 </content>
             </ScrollPane>
             <HBox alignment="BOTTOM_LEFT" spacing="3.0">
-                <TextArea fx:id="userInput" style="-fx-padding: 2 8;" HBox.hgrow="ALWAYS" maxHeight="150.0" minHeight="38.0" prefRowCount="1" promptText="Type a message..." wrapText="true" />
-                <Button fx:id="sendButton" mnemonicParsing="false" onAction="#handleUserInput" text="Send" />
+                <TextArea fx:id="userInput" style="-fx-background-color: #87CEEB; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; -fx-padding: 2 8;" HBox.hgrow="ALWAYS" maxHeight="150.0" minHeight="38.0" prefRowCount="1" promptText="Type a message..." wrapText="true" />
+                <Button fx:id="sendButton" minHeight="40.0" minWidth="80.0" prefWidth="80.0" maxHeight="Infinity" mnemonicParsing="false" onAction="#handleUserInput" style="-fx-background-color: #FFD54F; -fx-text-fill: #5D4037; -fx-padding: 10 20;" text="Send" />
             </HBox>
         </VBox>
     </children>
