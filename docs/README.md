@@ -4,6 +4,23 @@
 
 ![Bob Chatbot](images/Ui.png)
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Notes about the command format](#notes-about-the-command-format)
+- [Features](#features)
+  - [Viewing tasks: `list`](#viewing-tasks-list)
+  - [Adding a todo: `todo`](#adding-a-todo-todo)
+  - [Adding a deadline: `deadline`](#adding-a-deadline-deadline)
+  - [Adding an event: `event`](#adding-an-event-event)
+  - [Marking a task done: `mark`](#marking-a-task-done-mark)
+  - [Unmarking a task: `unmark`](#unmarking-a-task-unmark)
+  - [Deleting a task: `delete`](#deleting-a-task-delete)
+  - [Finding tasks: `find`](#finding-tasks-find)
+  - [Viewing tasks on a date: `on`](#viewing-tasks-on-a-date-on)
+  - [Exiting: `bye`](#exiting-bye)
+- [Tips](#tips)
+
 ---
 
 ## Quick Start
