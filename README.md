@@ -71,7 +71,7 @@ Or in IntelliJ: Right-click `src/main/java/bob/gui/Launcher.java` → `Run Launc
 
 Or in IntelliJ: Right-click `src/main/java/bob/Bob.java` → `Run Bob.main()`
 
-### Run JAR, using GUI
+### Run JAR (GUI)
 
 ```bash
 ./gradlew shadowJar
