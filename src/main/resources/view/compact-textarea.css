@@ -1,0 +1,10 @@
+/* Compact TextArea styling - matches original single-line TextField height */
+#userInput .content {
+    -fx-padding: 2 5;
+}
+
+/* Remove focus ring / blue border */
+#userInput {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
