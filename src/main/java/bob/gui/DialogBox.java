@@ -14,6 +14,13 @@ import javafx.scene.layout.Priority;
  * A custom control representing a dialog box consisting of a label and an image view.
  */
 public class DialogBox extends HBox {
+    private static final String BOB_BUBBLE_STYLE =
+            "-fx-background-color: #A5D6A7; -fx-background-radius: 10; -fx-padding: 10;";
+    private static final String USER_BUBBLE_STYLE =
+            "-fx-background-color: #BDBDBD; -fx-background-radius: 10; -fx-padding: 10;";
+    private static final String ERROR_STYLE =
+            "-fx-background-color: #EF9A9A; -fx-background-radius: 10; -fx-padding: 10;";
+
     private Label text;
     private ImageView displayPicture;
 
@@ -22,12 +29,17 @@ public class DialogBox extends HBox {
      *
      * @param s Text to display.
      * @param i Image to display.
+     * @param isError If true, the bubble is styled in red to indicate an error.
+     * @param isUser If true, the bubble is styled for user; otherwise for Bob.
      */
-    public DialogBox(String s, Image i) {
+    public DialogBox(String s, Image i, boolean isError, boolean isUser) {
         text = new Label(s);
         text.setWrapText(true);
         text.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(text, Priority.ALWAYS);
+        String bubbleStyle = isError ? ERROR_STYLE
+                : (isUser ? USER_BUBBLE_STYLE : BOB_BUBBLE_STYLE);
+        text.setStyle(bubbleStyle);
 
         displayPicture = new ImageView(i);
         displayPicture.setFitWidth(100.0);
@@ -48,11 +60,23 @@ public class DialogBox extends HBox {
     }
 
     public static DialogBox getUserDialog(String text, Image img) {
-        return new DialogBox(text, img);
+        return new DialogBox(text, img, false, true);
     }
 
     public static DialogBox getBobDialog(String text, Image img) {
-        var db = new DialogBox(text, img);
+        return getBobDialog(text, img, false);
+    }
+
+    /**
+     * Creates a Bob dialog box with optional error styling.
+     *
+     * @param text Text to display.
+     * @param img Bob's avatar image.
+     * @param isError If true, the bubble is styled in red to indicate an error.
+     * @return A dialog box for Bob's response.
+     */
+    public static DialogBox getBobDialog(String text, Image img, boolean isError) {
+        var db = new DialogBox(text, img, isError, false);
         db.flip();
         return db;
     }

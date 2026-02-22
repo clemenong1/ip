@@ -7,6 +7,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
 import bob.command.CommandResult;
+import bob.command.GuiResponse;
 import bob.parser.Parser;
 import bob.storage.Storage;
 import bob.task.Task;
@@ -72,24 +73,25 @@ public class Bob {
 
     /**
      * Gets a response from Bob for the given user input.
-     * Used by the GUI to process commands and return responses as strings.
+     * Used by the GUI to process commands and return responses.
      *
      * @param input User's command input.
-     * @return Bob's response as a String.
+     * @return Bob's response as a GuiResponse (includes message and error flag).
      */
-    public String getResponse(String input) {
+    public GuiResponse getResponse(String input) {
         input = input.trim();
         CommandResult result = processCommand(input);
 
         if (result.getType() == CommandResult.ResultType.EXIT) {
-            return "Bye. Hope to see you again soon!";
+            return GuiResponse.success("Bye. Hope to see you again soon!");
         }
         String response = formatResult(result);
         String urgentPrefix = formatUrgentTasks();
         if (!urgentPrefix.isEmpty()) {
             response = urgentPrefix + "\n\n" + response;
         }
-        return response;
+        boolean isError = result.getType() == CommandResult.ResultType.ERROR;
+        return isError ? GuiResponse.error(response) : GuiResponse.success(response);
     }
 
     /**
